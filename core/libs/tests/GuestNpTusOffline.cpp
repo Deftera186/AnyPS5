@@ -240,6 +240,7 @@ int main() {
     CheckAsync("sceNpTusDeleteMultiSlotDataVUserAsync", [&](int req) { return sceNpTusDeleteMultiSlotDataVUserAsync(req, &virtualUser, slots, 2, nullptr); }, [&]() { return sceNpTusDeleteMultiSlotDataVUserAsync(9999, &virtualUser, slots, 2, nullptr); }, [&](int req) { return sceNpTusDeleteMultiSlotDataVUserAsync(req, &virtualUser, slots, 2, &buffer); });
     CheckSync("sceNpTusDeleteMultiSlotDataVUser", [&](int req) { return sceNpTusDeleteMultiSlotDataVUser(req, &virtualUser, slots, 2, nullptr); });
     CheckTss("sceNpTssGetDataAsync", 0, [&](int req, int slotId, void* status, const TssOption* option) { return sceNpTssGetDataAsync(req, slotId, status, 24, buffer, 16, option); });
+    CheckTss("sceNpTssGetData", SignedOut, [&](int req, int slotId, void* status, const TssOption* option) { return sceNpTssGetData(req, slotId, status, 24, buffer, 16, option); });
     {
         const int req = NewRequest();
         Require(sceNpTusGetData(req, &npId, 1, buffer, sizeof(buffer), buffer, 16, &buffer) == InvalidArgument, "sceNpTusGetData", "an option was not refused before waiting");
