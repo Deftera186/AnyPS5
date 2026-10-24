@@ -439,6 +439,10 @@ int APS5_VABI sceNpTssGetDataAsync(int reqId, std::int32_t slotId, void* dataSta
     return StartOffline(reqId);
 }
 
+int APS5_VABI sceNpTssGetData(int reqId, std::int32_t slotId, void* dataStatus, std::uint64_t dataStatusSize, void* data, std::uint64_t recvSize, const TssGetDataOptParam* option) {
+    return Complete(reqId, sceNpTssGetDataAsync(reqId, slotId, dataStatus, dataStatusSize, data, recvSize, option));
+}
+
 int APS5_VABI sceNpTssGetSmallStorageAsync(int reqId, void* data, std::uint64_t maxSize, std::uint64_t* contentLength, void* option) {
     (void)data;
     (void)contentLength;
@@ -1046,11 +1050,6 @@ int APS5_VABI sceNpTusTryAndSetVariableForCrossSaveVUser(int reqId, const NpOnli
 
 int APS5_VABI sceNpTusTryAndSetVariableVUser(int reqId, const NpOnlineId* targetVirtualUserId, std::int32_t slotId, std::int32_t opeType, std::int64_t variable, const std::int64_t* compareValue, const void* isLastChangedAuthor, const void* isLastChangedDate, void* resultVariable, std::uint64_t resultVariableSize, void* option) {
     return Complete(reqId, sceNpTusTryAndSetVariableVUserAsync(reqId, targetVirtualUserId, slotId, opeType, variable, compareValue, isLastChangedAuthor, isLastChangedDate, resultVariable, resultVariableSize, option));
-}
-
-int APS5_VABI sceNpTssGetData() {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
 }
 
 int APS5_VABI sceNpTusCreateNpTitleCtx(std::uint32_t serviceLabel, void* npId) {
