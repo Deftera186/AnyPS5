@@ -1758,6 +1758,7 @@ using UntrackedHtileStamp = std::array<std::uint64_t, 5>;
 
 struct UntrackedHtileScan {
     std::size_t bytes = 0;
+    bool stencil = false;
     UntrackedHtileStamp stamp{};
 };
 
@@ -1860,7 +1861,7 @@ VkImageAspectFlags storeBackClearedHtile(const Context& context, const DepthTarg
         if (found != htileReads().end() && found->second != 0 && GuestMemory::UnchangedSince(target.htileAddress, bytes, found->second)) return 0;
         if (untracked) {
             const auto scanned = untrackedHtileScans().find(target.htileAddress);
-            if (scanned != untrackedHtileScans().end() && scanned->second.bytes == bytes && scanned->second.stamp == *untracked) return 0;
+            if (scanned != untrackedHtileScans().end() && scanned->second.bytes == bytes && scanned->second.stencil == target.htileStencil && scanned->second.stamp == *untracked) return 0;
         }
     }
     static const bool pendingFills = std::getenv("APS5_NO_PENDING_HTILE_FILLS") == nullptr;
@@ -1893,7 +1894,7 @@ VkImageAspectFlags storeBackClearedHtile(const Context& context, const DepthTarg
     }
     std::lock_guard lock(htileReadsMutex());
     htileReads()[target.htileAddress] = generation;
-    if (cleared == 0 && untracked) untrackedHtileScans()[target.htileAddress] = {bytes, *untracked};
+    if (cleared == 0 && untracked) untrackedHtileScans()[target.htileAddress] = {bytes, target.htileStencil, *untracked};
     else untrackedHtileScans().erase(target.htileAddress);
     return cleared;
 }
