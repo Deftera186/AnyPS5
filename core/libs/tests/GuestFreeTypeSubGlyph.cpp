@@ -1,5 +1,5 @@
 #include "FontFixture.hpp"
-#include "prx/libSceFreeType/include/GuestFreeType.hpp"
+#include "prx/libSceFreeType/libSceFreeType.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -13,15 +13,6 @@
 #include <vector>
 
 using namespace FreeType;
-
-extern "C" {
-int APS5_VABI FT_Init_FreeType_nid_postfix(void**);
-int APS5_VABI FT_Done_FreeType_nid_postfix(void*);
-int APS5_VABI FT_New_Memory_Face_nid_postfix(void*, const unsigned char*, std::int64_t, std::int64_t, GuestFaceRec**);
-int APS5_VABI FT_Set_Pixel_Sizes_nid_postfix(GuestFaceRec*, std::uint32_t, std::uint32_t);
-int APS5_VABI FT_Load_Glyph_nid_postfix(GuestFaceRec*, std::uint32_t, std::int32_t);
-int APS5_VABI FT_Get_SubGlyph_Info_nid_postfix(GuestGlyphSlotRec*, std::uint32_t, std::int32_t*, std::uint32_t*, std::int32_t*, std::int32_t*, GuestMatrix*);
-}
 
 static void Check(bool value, int line) {
     if (!value) {
@@ -99,7 +90,7 @@ static FT_Error Compare(GuestGlyphSlotRec* slot, FT_GlyphSlot native, std::uint3
 
 int main() {
     const auto font = CompositeFont();
-    void* library = nullptr;
+    GuestLibrary* library = nullptr;
     FT_Library nativeLibrary = nullptr;
     Require(FT_Init_FreeType_nid_postfix(&library) == 0 && FT_Init_FreeType(&nativeLibrary) == 0);
     GuestFaceRec* face = nullptr;
