@@ -6,6 +6,17 @@
 
 ### Unknown function info
 
+- [libSceNpManager additional exports](../../../core/libs/prx/libSceNpManager/AdditionalExports.cpp) - these name/NID pairs are present in the 13.60 export inventory. Parameter lists, return types and behavior are unverified. Parameterless `int` declarations are import-resolution placeholders, not verified ABI prototypes; every entry throws through `NotImplemented_nid_no_patch`. No runtime functionality is implemented.
+
+| Name | NID |
+| --- | --- |
+| `sceNpAsmClientExtAbortRequest` | `Xi517rrV8MU` |
+| `sceNpAsmClientExtCreateRequest` | `yB12TC6fbPo` |
+| `sceNpAsmClientExtDeleteRequest` | `yuQrMTiR28k` |
+| `sceNpAsmClientExtGetPlayingTitleNpTitleToken` | `zj5wKSAva+Y` |
+| `sceNpAsmClientExtInitialize` | `kKCa1japBxI` |
+| `sceNpAsmClientExtTerminate` | `yODgcWKSa8Q` |
+
 - [sceNpWaitAsync](../../../core/libs/prx/libSceNpManager/Export.cpp) (libSceNpManager, NID `jyi5p9XWUSs`) - the public PS5 3.20 inventory identifies this as a function. Its signature, request completion, output and error behavior are not verified for PS5, so the no-parameter placeholder throws instead of reporting a fabricated completion result.
 - [libSceNpManager pending exports](../../../core/libs/prx/libSceNpManager/Export.cpp) - 144 named callable exports are present in the local `libSceNpManager.sprx` export table and the public PS5 3.20 symbol list. Their signatures and behavior are unverified; each declaration uses the no-parameter unknown-signature convention and throws through `NotImplemented_nid_no_patch`.
 
