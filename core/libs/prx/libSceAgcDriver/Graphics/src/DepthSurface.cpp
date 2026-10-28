@@ -1770,6 +1770,7 @@ std::map<std::uint64_t, UntrackedHtileScan>& untrackedHtileScans() {
 std::optional<UntrackedHtileStamp> untrackedHtileStamp(const Recorder* recorder, std::uint64_t address, std::size_t bytes) {
     const auto epoch = GuestMemory::CollectEpoch();
     if (epoch == 0) return std::nullopt;
+    GuestMemory::FlushGpuWrites(address, bytes);
     const auto hint = GuestMemory::UntrackedHint(address, bytes);
     const UntrackedHtileStamp stamp{hint != 0, hint != 0 ? hint : epoch, GuestMemory::NewestStamp(address, bytes), GuestMemory::ForgetSerial(), recorder != nullptr ? recorder->NewestWriteNote(address, bytes) : 0};
     if ((stamp[3] & 1u) != 0) return std::nullopt;
