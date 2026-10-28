@@ -2,10 +2,7 @@
 #include "prx/libc/include/general/VabiMacros.hpp"
 #include <cstdlib>
 
-extern "C" {
-void APS5_VABI __tsan_acquire(void*);
-void APS5_VABI __tsan_release(void*);
-}
+#include "prx/libSceDbgThreadSanitizer/include/Api.hpp"
 
 static void Require(bool value) {
     if (!value) std::abort();
