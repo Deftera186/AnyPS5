@@ -198,3 +198,23 @@
 - [sceNpManagerIntGetAccountId, sceNpManagerIntGetAccountIdSdk, sceNpManagerIntGetUserIdByAccountId](../../../core/libs/prx/libSceNpManager/Export.cpp) (libSceNpManager) - still throw: their answer or their input is an account id, and what a signed-out user's account id is depends on the offline account-id model of [#6990](https://github.com/boykopovar/AnyPS5/pull/6990) and [#7412](https://github.com/boykopovar/AnyPS5/pull/7412), as for `sceNpIdMapperAccountIdToNpId`
 - [sceNpPollAsync](../../../core/libs/prx/libSceNpManager/Export.cpp) (libSceNpManager) - a null result pointer returns `SCE_NP_ERROR_INVALID_ARGUMENT` before the id is read, a request id that was never created or was deleted returns `SCE_NP_ERROR_REQUEST_NOT_FOUND` without writing the caller's result, and a live request keeps its signed-out completion `0` with `SCE_NP_ERROR_SIGNED_OUT`, as [shadPS4](https://github.com/shadps4-emu/shadPS4/blob/81be949167d0060b08f26dc3e055a0b640d129c8/src/core/libraries/np/np_manager.cpp) does in `sceNpPollAsync` ([#9277](https://github.com/boykopovar/AnyPS5/issues/9277)). The parts of that model beyond the validation are not implemented: shadPS4 keeps a per-request state machine decorated by `sceNpCheckNpAvailability` and neighbors and refuses `InvalidId` for a ready async request in wait/poll, whose completion publication, poll-versus-wait precedence and already-complete errors remain unattributable to the PS5
 - [sceNpCreateAsyncRequest](../../../core/libs/prx/libSceNpManager/Export.cpp) (libSceNpManager) - the parameter is not read ([NpCreateAsyncRequestParameter](../../../core/libs/SceTypes.hpp) is a 0x40-byte opaque blob, so shadPS4's nonnull check and `size == sizeof` reject ([81be949167d0060b08f26dc3e055a0b640d129c8](https://github.com/shadps4-emu/shadPS4/blob/81be949167d0060b08f26dc3e055a0b640d129c8/src/core/libraries/np/np_manager.cpp)) cannot be applied without inventing a layout) and no async kind or completion state is stored until the console's contract for them is evidenced ([#9277](https://github.com/boykopovar/AnyPS5/issues/9277))
+
+#### Additional-export identity evidence
+
+This additional inventory uses the PS5 firmware 13.60 `libSceNpManager` function-export table: defined `STT_FUNC` entries with 11-character NIDs. It is not the PS5 3.20 table cited for the older declaration block. Firmware membership and callable symbol kind were checked separately from candidate-name resolution; the hashed export table does not establish a C prototype or contain these spellings as plaintext export names.
+
+All 33 named declarations were matched by recomputing candidate spellings against the function NIDs; none is assigned by ordinal or neighbouring address. The [repository-pinned aerolib table](https://github.com/zecoxao/sce_symbols/blob/2883963a0a514ba6e77407a08ef4730a65e88254/aerolib.csv) contains 22 of the pairs. The other 11 candidates occur in the [public ps5rs identity database at commit `2304be5131221bae0dac24b9767cabffda33f747`](https://github.com/claimore22/ps5rs/blob/2304be5131221bae0dac24b9767cabffda33f747/data/nids.csv); each independently hashes to a function NID in the 13.60 table. That public database supports spelling only, not firmware attribution or ABI. The remaining 115 exports stay NID-only.
+
+| Supplemental candidate spelling | NID |
+| --- | --- |
+| `sceNpManagerIntClearBcAccessToken` | `vMbEH4rT5CM` |
+| `sceNpManagerIntSetStreamingSandboxSecret` | `LCgXXwy-Gpg` |
+| `sceNpManagerIntGetClientCredentialJwtAccessToken` | `PuKANq-Ceqo` |
+| `sceNpManagerIntGetStreamingSandboxSecret` | `9aQPQa73zus` |
+| `sceNpSandboxIntSetStreamingSandboxSecret` | `OTYUXXdJNbg` |
+| `sceNpSandboxIntCreateRequest` | `7IC43AzCrQU` |
+| `sceNpSandboxIntDeleteRequest` | `lkgRBuVtWFM` |
+| `sceNpSandboxIntAbortRequest` | `u0apsYwuTvE` |
+| `sceNpSandboxIntGetStreamingSandboxSecret` | `n1tgdduEHu8` |
+| `sceNpAsmClientExtTerminate` | `yODgcWKSa8Q` |
+| `sceNpPush2SetDataType` | `4CkpTzOLZKQ` |
