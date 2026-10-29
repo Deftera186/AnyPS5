@@ -108,23 +108,27 @@ struct TssOption {
     void* ifParam;
 };
 
-void CheckTss(const char* name, int accepted, const std::function<int(int, int, void*, const TssOption*)>& call) {
+void CheckTss(const char* name, int accepted, const std::function<int(int, int, void*, std::uint64_t, const TssOption*)>& call) {
     const int req = NewRequest();
-    Require(call(req, 0, nullptr, nullptr) == accepted, name, "a null data status did not reach the request");
-    Require(call(req, -1, buffer, nullptr) == InvalidArgument, name, "a negative slot id was taken");
-    Require(call(req, 16, buffer, nullptr) == InvalidArgument, name, "slot id 16 was taken");
-    Require(call(req, 16, nullptr, nullptr) == InvalidArgument, name, "the slot was not checked when data status is null");
-    Require(call(req, 0, buffer, nullptr) == accepted, name, "data status size 0 was refused");
-    Require(call(req, 0, buffer, reinterpret_cast<const TssOption*>(buffer)) == InvalidAlignment, name, "the option-size check did not run before the request lookup");
+    Require(call(req, 0, nullptr, 0, nullptr) == accepted, name, "a null data status did not reach the request");
+    Require(call(req, -1, buffer, 0x18, nullptr) == InvalidArgument, name, "a negative slot id was taken");
+    Require(call(req, 16, buffer, 0x18, nullptr) == InvalidArgument, name, "slot id 16 was taken");
+    Require(call(req, 16, nullptr, 0, nullptr) == InvalidArgument, name, "the slot was not checked when data status is null");
+    Require(call(req, 0, buffer, 0, nullptr) == InvalidAlignment, name, "data status size 0 was accepted");
+    Require(call(req, 0, buffer, 0x17, nullptr) == InvalidAlignment, name, "a short data status size was accepted");
+    Require(call(req, 0, buffer, 0x19, nullptr) == InvalidAlignment, name, "a long data status size was accepted");
+    Require(call(req, 16, buffer, 0x17, nullptr) == InvalidAlignment, name, "the slot check ran before an invalid data status size");
+    Require(call(9999, 0, buffer, 0x19, nullptr) == InvalidAlignment, name, "the request lookup ran before an invalid data status size");
+    Require(call(req, 0, buffer, 0x18, nullptr) == accepted, name, "data status size 0x18 was refused");
+    Require(call(req, 0, buffer, 0x18, reinterpret_cast<const TssOption*>(buffer)) == InvalidAlignment, name, "the option-size check did not run before the request lookup");
     TssOption option{sizeof(TssOption) - 8, nullptr, nullptr, nullptr};
-    Require(call(req, 16, buffer, &option) == InvalidAlignment, name, "the option-size check did not run before the slot check");
-    Require(call(req, 15, buffer, &option) == InvalidAlignment, name, "an option of the wrong size was taken");
-    Require(call(req, 15, buffer, nullptr) == accepted, name, "a short data status size was refused");
+    Require(call(req, 16, buffer, 0x18, &option) == InvalidAlignment, name, "the option-size check did not run before the slot check");
+    Require(call(req, 15, buffer, 0x18, &option) == InvalidAlignment, name, "an option of the wrong size was taken");
     std::uint64_t offset = 4;
     option = TssOption{sizeof(TssOption), &offset, &offset, nullptr};
-    Require(call(req, 15, buffer, &option) == accepted, name, "a valid option was refused");
-    Require(call(req, 0, buffer, nullptr) == accepted, name, "slot id 0 without an option was refused");
-    Require(call(9999, 0, buffer, nullptr) == InvalidId, name, "an unknown request was not refused with INVALID_ID");
+    Require(call(req, 15, buffer, 0x18, &option) == accepted, name, "a valid option was refused");
+    Require(call(req, 0, buffer, 0x18, nullptr) == accepted, name, "slot id 0 without an option was refused");
+    Require(call(9999, 0, buffer, 0x18, nullptr) == InvalidId, name, "an unknown request was not refused with INVALID_ID");
     int result = 0;
     if (accepted == 0) Require(sceNpTusWaitAsync(req, &result) == 0 && result == SignedOut, name, "the request did not finish signed out");
     sceNpTusDeleteRequest(req);
@@ -243,8 +247,8 @@ int main() {
     CheckSync("sceNpTusGetDataForCrossSaveVUser", [&](int req) { return sceNpTusGetDataForCrossSaveVUser(req, &virtualUser, 1, buffer, sizeof(buffer), buffer, 16, nullptr); });
     CheckAsync("sceNpTusDeleteMultiSlotDataVUserAsync", [&](int req) { return sceNpTusDeleteMultiSlotDataVUserAsync(req, &virtualUser, slots, 2, nullptr); }, [&]() { return sceNpTusDeleteMultiSlotDataVUserAsync(9999, &virtualUser, slots, 2, nullptr); }, [&](int req) { return sceNpTusDeleteMultiSlotDataVUserAsync(req, &virtualUser, slots, 2, &buffer); });
     CheckSync("sceNpTusDeleteMultiSlotDataVUser", [&](int req) { return sceNpTusDeleteMultiSlotDataVUser(req, &virtualUser, slots, 2, nullptr); });
-    CheckTss("sceNpTssGetDataAsync", 0, [&](int req, int slotId, void* status, const TssOption* option) { return sceNpTssGetDataAsync(req, slotId, status, 24, buffer, 16, option); });
-    CheckTss("sceNpTssGetData", SignedOut, [&](int req, int slotId, void* status, const TssOption* option) { return sceNpTssGetData(req, slotId, status, 24, buffer, 16, option); });
+    CheckTss("sceNpTssGetDataAsync", 0, [&](int req, int slotId, void* status, std::uint64_t statusSize, const TssOption* option) { return sceNpTssGetDataAsync(req, slotId, status, statusSize, buffer, 16, option); });
+    CheckTss("sceNpTssGetData", SignedOut, [&](int req, int slotId, void* status, std::uint64_t statusSize, const TssOption* option) { return sceNpTssGetData(req, slotId, status, statusSize, buffer, 16, option); });
     {
         const int req = NewRequest();
         Require(sceNpTusGetData(req, &npId, 1, buffer, sizeof(buffer), buffer, 16, &buffer) == InvalidArgument, "sceNpTusGetData", "an option was not refused before waiting");
