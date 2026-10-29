@@ -5,7 +5,6 @@ extern "C" {
 #define FREETYPEOL_STUB(NID, NAME) \
     int APS5_VABI NAME##_nid_no_patch() { NotImplemented_nid_no_patch(__func__); } \
     APS5_EXPORT(NID, NAME##_nid_no_patch);
-FREETYPEOL_STUB("mCIXittfvrw", sceFreeTypeOlFtaAddModule)
 FREETYPEOL_STUB("r2C1PcTDYxk", sceFreeTypeOlFtaAddModuleAutofitter)
 FREETYPEOL_STUB("1gAJb1uKyGo", sceFreeTypeOlFtaAddModuleBdf)
 FREETYPEOL_STUB("IjquEAbfizc", sceFreeTypeOlFtaAddModuleCff)
@@ -22,22 +21,6 @@ FREETYPEOL_STUB("zxsyxyiLthM", sceFreeTypeOlFtaAddModuleTruetype)
 FREETYPEOL_STUB("+v66TBg7tzA", sceFreeTypeOlFtaAddModuleType1)
 FREETYPEOL_STUB("ZYpIYZg3Jf4", sceFreeTypeOlFtaAddModuleType42)
 FREETYPEOL_STUB("JSi+hWkA9pI", sceFreeTypeOlFtaAddModuleWinfonts)
-FREETYPEOL_STUB("bZYqFlUVPCY", sceFreeTypeOlFtaExportModuleAutofitter)
-FREETYPEOL_STUB("ZhVdSRyrpUI", sceFreeTypeOlFtaExportModuleBdf)
-FREETYPEOL_STUB("phi4au-2t04", sceFreeTypeOlFtaExportModuleCff)
-FREETYPEOL_STUB("-qwk1RxUuDA", sceFreeTypeOlFtaExportModulePcf)
-FREETYPEOL_STUB("mQYQAi8B0Yo", sceFreeTypeOlFtaExportModulePfr)
-FREETYPEOL_STUB("4TJ1qJGXAV8", sceFreeTypeOlFtaExportModulePsaux)
-FREETYPEOL_STUB("IewcaRR3F8I", sceFreeTypeOlFtaExportModulePshinter)
-FREETYPEOL_STUB("vuuFugcw5ss", sceFreeTypeOlFtaExportModulePsnames)
-FREETYPEOL_STUB("xaswa+ndZS0", sceFreeTypeOlFtaExportModuleRaster1)
-FREETYPEOL_STUB("5-z1quqcDYo", sceFreeTypeOlFtaExportModuleSfnt)
-FREETYPEOL_STUB("VVfxa65sWF0", sceFreeTypeOlFtaExportModuleSmooth)
-FREETYPEOL_STUB("aX8PI-h3+dE", sceFreeTypeOlFtaExportModuleT1cid)
-FREETYPEOL_STUB("KIKL0rz6o-A", sceFreeTypeOlFtaExportModuleTruetype)
-FREETYPEOL_STUB("QPh+yb2Y8AQ", sceFreeTypeOlFtaExportModuleType1)
-FREETYPEOL_STUB("u36SHyuWQCA", sceFreeTypeOlFtaExportModuleType42)
-FREETYPEOL_STUB("ZHsmiChQLTk", sceFreeTypeOlFtaExportModuleWinfonts)
 FREETYPEOL_STUB("q2ESpjCIk7w", sceFreeTypeOlFtaRemoveModuleAutofitter)
 FREETYPEOL_STUB("C0nVvG6+x-s", sceFreeTypeOlFtaRemoveModuleBdf)
 FREETYPEOL_STUB("DIIRFBxRfMQ", sceFreeTypeOlFtaRemoveModuleCff)
@@ -54,14 +37,10 @@ FREETYPEOL_STUB("EveUtaCYQgk", sceFreeTypeOlFtaRemoveModuleTruetype)
 FREETYPEOL_STUB("B7Sw-iUs7e4", sceFreeTypeOlFtaRemoveModuleType1)
 FREETYPEOL_STUB("RM21Fgm0ZvQ", sceFreeTypeOlFtaRemoveModuleType42)
 FREETYPEOL_STUB("OmxJF0FvwWc", sceFreeTypeOlFtaRemoveModuleWinfonts)
-FREETYPEOL_STUB("LonHHN98tMI", sceFreeTypeOlAddModule)
 FREETYPEOL_STUB("Uw+BZJpflxk", sceFreeTypeOlAlloc)
 FREETYPEOL_STUB("fHMsRluEMfI", sceFreeTypeOlFree)
-FREETYPEOL_STUB("5NYsP564wwY", sceFreeTypeOlGetModuleInterface)
 FREETYPEOL_STUB("L-qInx9Dldk", sceFreeTypeOlFtaAddModuleGxvalid)
 FREETYPEOL_STUB("mhK+E1i3VuE", sceFreeTypeOlFtaAddModuleOtvalid)
-FREETYPEOL_STUB("qC+tiGwcW7E", sceFreeTypeOlFtaExportModuleGxvalid)
-FREETYPEOL_STUB("rl7aW17qQb8", sceFreeTypeOlFtaExportModuleOtvalid)
 FREETYPEOL_STUB("s3qCnsS3ATE", sceFreeTypeOlFtaRemoveModuleGxvalid)
 FREETYPEOL_STUB("OutzOzZp6-w", sceFreeTypeOlFtaRemoveModuleOtvalid)
 FREETYPEOL_STUB("4to3tThESn0", sceFreeTypeOlFtaSupportFormatBdf)
@@ -139,10 +118,6 @@ int RemoveModule(void* library, const char* name) {
 }
 
 extern "C" {
-int APS5_VABI sceFreeTypeOlFtaAddModule_nid_postfix(void* library, void* module) {
-    return AddModule(library, static_cast<const FT_Module_Class*>(module));
-}
-APS5_EXPORT("mCIXittfvrw", sceFreeTypeOlFtaAddModule_nid_postfix);
 
 void APS5_VABI sceFreeTypeOlFtaAddModuleAutofitter_nid_postfix(void* library) {
     (void)AddModule(library, ModuleClass(autofit_module_class));
@@ -224,85 +199,21 @@ void APS5_VABI sceFreeTypeOlFtaAddModuleWinfonts_nid_postfix(void* library) {
 }
 APS5_EXPORT("JSi+hWkA9pI", sceFreeTypeOlFtaAddModuleWinfonts_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleAutofitter_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(autofit_module_class));
-}
-APS5_EXPORT("bZYqFlUVPCY", sceFreeTypeOlFtaExportModuleAutofitter_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleBdf_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(bdf_driver_class));
-}
-APS5_EXPORT("ZhVdSRyrpUI", sceFreeTypeOlFtaExportModuleBdf_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleCff_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(cff_driver_class));
-}
-APS5_EXPORT("phi4au-2t04", sceFreeTypeOlFtaExportModuleCff_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModulePcf_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(pcf_driver_class));
-}
-APS5_EXPORT("-qwk1RxUuDA", sceFreeTypeOlFtaExportModulePcf_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModulePfr_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(pfr_driver_class));
-}
-APS5_EXPORT("mQYQAi8B0Yo", sceFreeTypeOlFtaExportModulePfr_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModulePsaux_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(psaux_module_class));
-}
-APS5_EXPORT("4TJ1qJGXAV8", sceFreeTypeOlFtaExportModulePsaux_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModulePshinter_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(pshinter_module_class));
-}
-APS5_EXPORT("IewcaRR3F8I", sceFreeTypeOlFtaExportModulePshinter_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModulePsnames_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(psnames_module_class));
-}
-APS5_EXPORT("vuuFugcw5ss", sceFreeTypeOlFtaExportModulePsnames_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleRaster1_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(ft_raster1_renderer_class));
-}
-APS5_EXPORT("xaswa+ndZS0", sceFreeTypeOlFtaExportModuleRaster1_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleSfnt_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(sfnt_module_class));
-}
-APS5_EXPORT("5-z1quqcDYo", sceFreeTypeOlFtaExportModuleSfnt_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleSmooth_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(ft_smooth_renderer_class));
-}
-APS5_EXPORT("VVfxa65sWF0", sceFreeTypeOlFtaExportModuleSmooth_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleT1cid_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(t1cid_driver_class));
-}
-APS5_EXPORT("aX8PI-h3+dE", sceFreeTypeOlFtaExportModuleT1cid_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleTruetype_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(tt_driver_class));
-}
-APS5_EXPORT("KIKL0rz6o-A", sceFreeTypeOlFtaExportModuleTruetype_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleType1_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(t1_driver_class));
-}
-APS5_EXPORT("QPh+yb2Y8AQ", sceFreeTypeOlFtaExportModuleType1_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleType42_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(t42_driver_class));
-}
-APS5_EXPORT("u36SHyuWQCA", sceFreeTypeOlFtaExportModuleType42_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleWinfonts_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(winfnt_driver_class));
-}
-APS5_EXPORT("ZHsmiChQLTk", sceFreeTypeOlFtaExportModuleWinfonts_nid_postfix);
 
 int APS5_VABI sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(void* library) {
     return RemoveModule(library, "autofitter");
@@ -384,10 +295,6 @@ int APS5_VABI sceFreeTypeOlFtaRemoveModuleWinfonts_nid_postfix(void* library) {
 }
 APS5_EXPORT("OmxJF0FvwWc", sceFreeTypeOlFtaRemoveModuleWinfonts_nid_postfix);
 
-int APS5_VABI sceFreeTypeOlAddModule_nid_postfix(void* library, void* module) {
-    return AddModule(library, static_cast<const FT_Module_Class*>(module));
-}
-APS5_EXPORT("LonHHN98tMI", sceFreeTypeOlAddModule_nid_postfix);
 
 int APS5_VABI sceFreeTypeOlAlloc_nid_postfix(GuestMemoryRec* memory, std::int64_t size, void** output) {
     if (output) *output = nullptr;
@@ -405,11 +312,6 @@ void APS5_VABI sceFreeTypeOlFree_nid_postfix(GuestMemoryRec* memory, void** bloc
 }
 APS5_EXPORT("fHMsRluEMfI", sceFreeTypeOlFree_nid_postfix);
 
-const void* APS5_VABI sceFreeTypeOlGetModuleInterface_nid_postfix(void* library, const char* name) {
-    const auto host = library ? static_cast<GuestLibrary*>(library)->host : nullptr;
-    return host && name ? FT_Get_Module_Interface(host, name) : nullptr;
-}
-APS5_EXPORT("5NYsP564wwY", sceFreeTypeOlGetModuleInterface_nid_postfix);
 
 
 void APS5_VABI sceFreeTypeOlFtaAddModuleGxvalid_nid_postfix(void* library) {
@@ -422,15 +324,7 @@ void APS5_VABI sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix(void* library) {
 }
 APS5_EXPORT("mhK+E1i3VuE", sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleGxvalid_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(gxv_module_class));
-}
-APS5_EXPORT("qC+tiGwcW7E", sceFreeTypeOlFtaExportModuleGxvalid_nid_postfix);
 
-void* APS5_VABI sceFreeTypeOlFtaExportModuleOtvalid_nid_postfix() {
-    return const_cast<FT_Module_Class*>(ModuleClass(otv_module_class));
-}
-APS5_EXPORT("rl7aW17qQb8", sceFreeTypeOlFtaExportModuleOtvalid_nid_postfix);
 
 int APS5_VABI sceFreeTypeOlFtaRemoveModuleGxvalid_nid_postfix(void* library) {
     return RemoveModule(library, "gxvalid");
