@@ -1,6 +1,82 @@
+#include "prx/libc/include/General.hpp"
+
+#if defined(ANYPS5_FREETYPEOL_SYSTEM_DEPS)
+extern "C" {
+#define FREETYPEOL_STUB(NID, NAME) \
+    int APS5_VABI NAME##_nid_no_patch() { NotImplemented_nid_no_patch(__func__); } \
+    APS5_EXPORT(NID, NAME##_nid_no_patch);
+FREETYPEOL_STUB("mCIXittfvrw", sceFreeTypeOlFtaAddModule)
+FREETYPEOL_STUB("r2C1PcTDYxk", sceFreeTypeOlFtaAddModuleAutofitter)
+FREETYPEOL_STUB("1gAJb1uKyGo", sceFreeTypeOlFtaAddModuleBdf)
+FREETYPEOL_STUB("IjquEAbfizc", sceFreeTypeOlFtaAddModuleCff)
+FREETYPEOL_STUB("bAbUJvsiVdI", sceFreeTypeOlFtaAddModulePcf)
+FREETYPEOL_STUB("1GYsjUC-HLM", sceFreeTypeOlFtaAddModulePfr)
+FREETYPEOL_STUB("KLaWCpRxYWo", sceFreeTypeOlFtaAddModulePsaux)
+FREETYPEOL_STUB("qodr9TJuFds", sceFreeTypeOlFtaAddModulePshinter)
+FREETYPEOL_STUB("Ic8JMhUFe88", sceFreeTypeOlFtaAddModulePsnames)
+FREETYPEOL_STUB("CIrV8Sq2Uic", sceFreeTypeOlFtaAddModuleRaster1)
+FREETYPEOL_STUB("eS+4GhL28gs", sceFreeTypeOlFtaAddModuleSfnt)
+FREETYPEOL_STUB("XpA3dnvjl8w", sceFreeTypeOlFtaAddModuleSmooth)
+FREETYPEOL_STUB("oKG-LjaBzzs", sceFreeTypeOlFtaAddModuleT1cid)
+FREETYPEOL_STUB("zxsyxyiLthM", sceFreeTypeOlFtaAddModuleTruetype)
+FREETYPEOL_STUB("+v66TBg7tzA", sceFreeTypeOlFtaAddModuleType1)
+FREETYPEOL_STUB("ZYpIYZg3Jf4", sceFreeTypeOlFtaAddModuleType42)
+FREETYPEOL_STUB("JSi+hWkA9pI", sceFreeTypeOlFtaAddModuleWinfonts)
+FREETYPEOL_STUB("bZYqFlUVPCY", sceFreeTypeOlFtaExportModuleAutofitter)
+FREETYPEOL_STUB("ZhVdSRyrpUI", sceFreeTypeOlFtaExportModuleBdf)
+FREETYPEOL_STUB("phi4au-2t04", sceFreeTypeOlFtaExportModuleCff)
+FREETYPEOL_STUB("-qwk1RxUuDA", sceFreeTypeOlFtaExportModulePcf)
+FREETYPEOL_STUB("mQYQAi8B0Yo", sceFreeTypeOlFtaExportModulePfr)
+FREETYPEOL_STUB("4TJ1qJGXAV8", sceFreeTypeOlFtaExportModulePsaux)
+FREETYPEOL_STUB("IewcaRR3F8I", sceFreeTypeOlFtaExportModulePshinter)
+FREETYPEOL_STUB("vuuFugcw5ss", sceFreeTypeOlFtaExportModulePsnames)
+FREETYPEOL_STUB("xaswa+ndZS0", sceFreeTypeOlFtaExportModuleRaster1)
+FREETYPEOL_STUB("5-z1quqcDYo", sceFreeTypeOlFtaExportModuleSfnt)
+FREETYPEOL_STUB("VVfxa65sWF0", sceFreeTypeOlFtaExportModuleSmooth)
+FREETYPEOL_STUB("aX8PI-h3+dE", sceFreeTypeOlFtaExportModuleT1cid)
+FREETYPEOL_STUB("KIKL0rz6o-A", sceFreeTypeOlFtaExportModuleTruetype)
+FREETYPEOL_STUB("QPh+yb2Y8AQ", sceFreeTypeOlFtaExportModuleType1)
+FREETYPEOL_STUB("u36SHyuWQCA", sceFreeTypeOlFtaExportModuleType42)
+FREETYPEOL_STUB("ZHsmiChQLTk", sceFreeTypeOlFtaExportModuleWinfonts)
+FREETYPEOL_STUB("q2ESpjCIk7w", sceFreeTypeOlFtaRemoveModuleAutofitter)
+FREETYPEOL_STUB("C0nVvG6+x-s", sceFreeTypeOlFtaRemoveModuleBdf)
+FREETYPEOL_STUB("DIIRFBxRfMQ", sceFreeTypeOlFtaRemoveModuleCff)
+FREETYPEOL_STUB("E9y7-AmuziU", sceFreeTypeOlFtaRemoveModulePcf)
+FREETYPEOL_STUB("-whG27+m+C0", sceFreeTypeOlFtaRemoveModulePfr)
+FREETYPEOL_STUB("wGGhfabJAbs", sceFreeTypeOlFtaRemoveModulePsaux)
+FREETYPEOL_STUB("KuJkc0qDvOQ", sceFreeTypeOlFtaRemoveModulePshinter)
+FREETYPEOL_STUB("jqMurvieLBk", sceFreeTypeOlFtaRemoveModulePsnames)
+FREETYPEOL_STUB("z9YQIyuTMV4", sceFreeTypeOlFtaRemoveModuleRaster1)
+FREETYPEOL_STUB("50HTRXvbW-k", sceFreeTypeOlFtaRemoveModuleSfnt)
+FREETYPEOL_STUB("M5dtVv0ln5Q", sceFreeTypeOlFtaRemoveModuleSmooth)
+FREETYPEOL_STUB("MJVrwM6aTTk", sceFreeTypeOlFtaRemoveModuleT1cid)
+FREETYPEOL_STUB("EveUtaCYQgk", sceFreeTypeOlFtaRemoveModuleTruetype)
+FREETYPEOL_STUB("B7Sw-iUs7e4", sceFreeTypeOlFtaRemoveModuleType1)
+FREETYPEOL_STUB("RM21Fgm0ZvQ", sceFreeTypeOlFtaRemoveModuleType42)
+FREETYPEOL_STUB("OmxJF0FvwWc", sceFreeTypeOlFtaRemoveModuleWinfonts)
+FREETYPEOL_STUB("LonHHN98tMI", sceFreeTypeOlAddModule)
+FREETYPEOL_STUB("Uw+BZJpflxk", sceFreeTypeOlAlloc)
+FREETYPEOL_STUB("fHMsRluEMfI", sceFreeTypeOlFree)
+FREETYPEOL_STUB("5NYsP564wwY", sceFreeTypeOlGetModuleInterface)
+FREETYPEOL_STUB("L-qInx9Dldk", sceFreeTypeOlFtaAddModuleGxvalid)
+FREETYPEOL_STUB("mhK+E1i3VuE", sceFreeTypeOlFtaAddModuleOtvalid)
+FREETYPEOL_STUB("qC+tiGwcW7E", sceFreeTypeOlFtaExportModuleGxvalid)
+FREETYPEOL_STUB("rl7aW17qQb8", sceFreeTypeOlFtaExportModuleOtvalid)
+FREETYPEOL_STUB("s3qCnsS3ATE", sceFreeTypeOlFtaRemoveModuleGxvalid)
+FREETYPEOL_STUB("OutzOzZp6-w", sceFreeTypeOlFtaRemoveModuleOtvalid)
+FREETYPEOL_STUB("4to3tThESn0", sceFreeTypeOlFtaSupportFormatBdf)
+FREETYPEOL_STUB("2D3H+1nhwqQ", sceFreeTypeOlFtaSupportFormatPcf)
+FREETYPEOL_STUB("upeKra1FaQk", sceFreeTypeOlFtaSupportFormatPfr)
+FREETYPEOL_STUB("Yu7mmGCjSYM", sceFreeTypeOlFtaSupportFormatWinFonts)
+FREETYPEOL_STUB("SDPzjFN7y4E", sceFreeTypeOlFtaSupportHinterAutoFitter)
+FREETYPEOL_STUB("3dTNNBoujn0", sceFreeTypeOlFtaSupportRendererRaster1)
+FREETYPEOL_STUB("b7S96aD8dkE", sceFreeTypeOlFtaSupportRendererSmooth)
+FREETYPEOL_STUB("oJm1lThZ3iQ", sceFreeTypeOlDoneGlyphSlot)
+#undef FREETYPEOL_STUB
+}
+#else
 #include "prx/libSceFreeType/include/Api.hpp"
 #include "prx/libSceFreeType/include/GuestObjects.hpp"
-#include "prx/libc/include/General.hpp"
 
 #include <ft2build.h>
 #include FT_MODULE_H
@@ -412,3 +488,5 @@ void APS5_VABI sceFreeTypeOlDoneGlyphSlot_nid_postfix(GuestGlyphSlotRec* slot) {
 APS5_EXPORT("oJm1lThZ3iQ", sceFreeTypeOlDoneGlyphSlot_nid_postfix);
 
 }
+
+#endif
