@@ -1,4 +1,6 @@
 #include "prx/libSceFreeTypeOl/libSceFreeTypeOl.hpp"
+#include "prx/libSceFreeType/include/GuestObjects.hpp"
+#include "FreeTypeFontFixture.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -29,29 +31,34 @@ static void APS5_VABI Release(GuestMemoryRec*, void* block) {
 }
 
 int main() {
-    FT_Library native = nullptr;
-    REQUIRE(FT_Init_FreeType(&native) == 0);
+    GuestLibrary* library = nullptr;
+    REQUIRE(FT_Init_FreeType_nid_postfix(&library) == 0);
+    REQUIRE(library != nullptr && library->host != nullptr);
+    FT_Library native = library->host;
 
     auto* autofitter = static_cast<FT_Module_Class*>(sceFreeTypeOlFtaExportModuleAutofitter_nid_postfix());
     REQUIRE(autofitter != nullptr);
     REQUIRE(autofitter->module_name != nullptr);
+    REQUIRE(sceFreeTypeOlAddModule_nid_postfix(nullptr, autofitter) == 0x21);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(nullptr) == 0x21);
+    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(nullptr, "truetype") == nullptr);
     REQUIRE(FT_Get_Module(native, "autofitter") != nullptr);
-    REQUIRE(sceFreeTypeOlAddModule_nid_postfix(native, autofitter) == 5);
-    REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(native) == 0);
+    REQUIRE(sceFreeTypeOlAddModule_nid_postfix(library, autofitter) == 5);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(library) == 0);
     REQUIRE(FT_Get_Module(native, "autofitter") == nullptr);
-    sceFreeTypeOlFtaAddModuleAutofitter_nid_postfix(native);
+    sceFreeTypeOlFtaAddModuleAutofitter_nid_postfix(library);
     REQUIRE(FT_Get_Module(native, "autofitter") != nullptr);
 
-    sceFreeTypeOlFtaAddModuleGxvalid_nid_postfix(native);
+    sceFreeTypeOlFtaAddModuleGxvalid_nid_postfix(library);
     REQUIRE(FT_Get_Module(native, "gxvalid") != nullptr);
-    REQUIRE(sceFreeTypeOlFtaRemoveModuleGxvalid_nid_postfix(native) == 0);
-    sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix(native);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleGxvalid_nid_postfix(library) == 0);
+    sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix(library);
     REQUIRE(FT_Get_Module(native, "otvalid") != nullptr);
-    REQUIRE(sceFreeTypeOlFtaRemoveModuleOtvalid_nid_postfix(native) == 0);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleOtvalid_nid_postfix(library) == 0);
 
-    REQUIRE(sceFreeTypeOlFtaSupportFormatBdf_nid_postfix(native) == 0);
-    REQUIRE(sceFreeTypeOlFtaSupportRendererSmooth_nid_postfix(native) == 0);
-    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(native, "truetype") ==
+    REQUIRE(sceFreeTypeOlFtaSupportFormatBdf_nid_postfix(library) == 0);
+    REQUIRE(sceFreeTypeOlFtaSupportRendererSmooth_nid_postfix(library) == 0);
+    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(library, "truetype") ==
         FT_Get_Module_Interface(native, "truetype"));
 
     GuestMemoryRec memory{};
@@ -65,5 +72,14 @@ int main() {
     REQUIRE(sceFreeTypeOlAlloc_nid_postfix(&memory, -1, &block) == 6);
     REQUIRE(block == nullptr);
 
-    REQUIRE(FT_Done_FreeType(native) == 0);
+    const auto font = SquareGlyphFont('A', 700, true);
+    GuestFaceRec* face = nullptr;
+    REQUIRE(FT_New_Memory_Face_nid_postfix(library, font.data(), font.size(), 0, &face) == 0);
+    REQUIRE(face != nullptr && face->glyph != nullptr);
+    sceFreeTypeOlDoneGlyphSlot_nid_postfix(nullptr);
+    sceFreeTypeOlDoneGlyphSlot_nid_postfix(face->glyph);
+    REQUIRE(face->glyph == nullptr);
+    REQUIRE(FT_Done_Face_nid_postfix(face) == 0);
+
+    REQUIRE(FT_Done_FreeType_nid_postfix(library) == 0);
 }
