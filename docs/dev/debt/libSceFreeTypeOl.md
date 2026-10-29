@@ -1,6 +1,6 @@
 # libSceFreeTypeOl technical debt
 
-### Remaining exports requiring Sony-specific or shared-state behavior
+### Silent stubs requiring Sony-specific or shared-state behavior
 
 The PS5 3.20 export inventory and verified NID-name database identify 92 exports in this library. The decrypted local PS5 13.60 `libSceFreeTypeOl.sprx` (SHA-256 `61E0CDB1628968A9D26790D8F6C2874C0CBF86193DC1762BA83E434CF229BADA`) was analyzed locally with Ghidra; no binary or decompilation is included in this repository. The analysis confirmed the FreeType wrapper signatures and the shared-library module lifecycle.
 
