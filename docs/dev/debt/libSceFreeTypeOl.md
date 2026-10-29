@@ -4,6 +4,8 @@
 
 The PS5 3.20 export inventory and verified NID-name database identify 92 exports in this library. The decrypted local PS5 13.60 `libSceFreeTypeOl.sprx` (SHA-256 `61E0CDB1628968A9D26790D8F6C2874C0CBF86193DC1762BA83E434CF229BADA`) was analyzed locally with Ghidra; no binary or decompilation is included in this repository. The analysis confirmed the FreeType wrapper signatures and the shared-library module lifecycle.
 
+Implemented wrappers are in [ModuleWrappers.cpp](../../../core/libs/prx/libSceFreeTypeOl/ModuleWrappers.cpp); the remaining NID aliases are in [Export.cpp](../../../core/libs/prx/libSceFreeTypeOl/Export.cpp).
+
 Seventy exports now forward to the bundled FreeType implementation: add/export/remove helpers for the 18 available module classes, the basic module support helpers, allocator/free, module-interface lookup, module registration, stream attachment, charmap lifecycle, and glyph-slot destruction. The implementation uses the matching FreeType 2.13 internal APIs and preserves the PS5 duplicate-module result behavior. Focused coverage is in `GuestFreeTypeOlModules.cpp`.
 
 The remaining 22 exports deliberately retain `NotImplemented_nid_no_patch` because their behavior cannot be represented by the currently bundled FreeType modules or its per-library state:
