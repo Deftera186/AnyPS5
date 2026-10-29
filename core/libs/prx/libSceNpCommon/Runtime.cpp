@@ -96,7 +96,6 @@ bool IsOnlineIdText(const char* text) {
 }
 
 constexpr int NP_ERROR_BUFFER_TOO_SMALL = static_cast<int>(0x80558008);
-constexpr std::size_t NP_TIME_RFC3339_SIZE = 0x80;
 
 int ReadClock(RtcTick* time, int result) {
     if (result >= 0) return 0;
@@ -638,11 +637,7 @@ bool APS5_VABI _ZNK3sce2np4Time22IsTimedoutSinceSecondsERKS1_lPl(const NpTime* s
 }
 
 int APS5_VABI _ZNK3sce2np4Time13FormatRFC3339EPcmi(const NpTime* self, char* text, std::size_t size, int timeZoneMinutes) {
-    if (size < NP_TIME_RFC3339_SIZE) return NP_ERROR_BUFFER_TOO_SMALL;
-    const int result = sceRtcFormatRFC3339(text, self, timeZoneMinutes);
-    if (result < 0) return result;
-    text[size - 1] = '\0';
-    return 0;
+    return sceNpRtcFormatRFC3339(text, size, self, timeZoneMinutes);
 }
 
 NpTime* APS5_VABI _ZN3sce2np4TimeplERKS1_(NpTime* self, const NpTime* other) {

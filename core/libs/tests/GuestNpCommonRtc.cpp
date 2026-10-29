@@ -1,5 +1,6 @@
 #include "prx/libSceNpCommon/include/Api.hpp"
 #include "SceTypes.hpp"
+#include "prx/libSceRtc/include/Rtc.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -78,6 +79,56 @@ int main() {
     CHECK(_ZNK3sce2np4Time13FormatRFC3339EPcmi(&epoch, text, sizeof(text) - 1, 0) == bufferTooSmall && text[0] == 'x');
     CHECK(_ZNK3sce2np4Time13FormatRFC3339EPcmi(&epoch, text, sizeof(text), 0) == 0 && std::strcmp(text, "1970-01-01T00:00:00.00Z") == 0
           && text[sizeof(text) - 1] == '\0');
+    const NpTime wrapLow{0};
+    const NpTime wrapHigh{~0ull};
+    CHECK(_ZNK3sce2np4Time27IsTimedoutSinceMicroSecondsERKS1_lPl(&wrapLow, &wrapHigh, 10, &remaining) && remaining == 0);
+    remainingShort = 7;
+    CHECK(_ZNK3sce2np4Time27IsTimedoutSinceMicroSecondsERKS1_jPj(&wrapLow, &wrapHigh, 10, &remainingShort) && remainingShort == 0);
+    CHECK(_ZNK3sce2np4Time22IsTimedoutSinceSecondsERKS1_lPl(&wrapLow, &wrapHigh, 10, &remaining) && remaining == 0);
+    const NpTime pastShort{unixEpochTick + 0x100000001ull};
+    CHECK(_ZNK3sce2np4Time27IsTimedoutSinceMicroSecondsERKS1_jPj(&pastShort, &start, 10, &remainingShort) && remainingShort == 0);
+    remaining = -1;
+    CHECK(_ZNK3sce2np4Time22IsTimedoutSinceSecondsERKS1_lPl(&later, &start, -1, &remaining) && remaining == 0);
+    const NpTime threeSeconds{unixEpochTick + 3000000};
+    CHECK(_ZNK3sce2np4Time22IsTimedoutSinceSecondsERKS1_lPl(&threeSeconds, &start, 3, &remaining) && remaining == 0);
+    CHECK(_ZNK3sce2np4Time22IsTimedoutSinceSecondsERKS1_lPl(&later, &start, 1ll << 58, &remaining) && remaining == 0);
+
+    time = epoch;
+    CHECK(_ZN3sce2np4Time7AddDaysEl(&time, 0x100000001ll) == &time && time.tick == unixEpochTick + 86400000000ull);
+
+    const RtcTick networkSet{unixEpochTick + 1000000000000ull};
+    const RtcTick debugSet{unixEpochTick + 2000000000000ull};
+    CHECK(sceRtcSetCurrentNetworkTick(&networkSet) == 0 && sceRtcSetCurrentDebugNetworkTick(&debugSet) == 0);
+    NpTime clock{0};
+    CHECK(_ZN3sce2np4Time15GetNetworkClockEPS1_(&clock) == 0 && clock.tick >= networkSet.tick && clock.tick < debugSet.tick);
+    CHECK(_ZN3sce2np4Time20GetDebugNetworkClockEPS1_(&clock) == 0 && clock.tick >= debugSet.tick);
+
+    const RtcDateTime badDay{1970, 2, 30, 0, 0, 0, 0};
+    time = epoch;
+    CHECK(_ZN3sce2np4Time11SetDateTimeERKNS0_8DateTimeE(&time, &badDay) < 0 && time.tick == unixEpochTick);
+
+    using Compare = bool (APS5_VABI*)(const NpTime*, const NpTime*);
+    const Compare same[] = {_ZN3sce2npeqERKNS0_4TimeES3_, _ZN3sce2npneERKNS0_4TimeES3_, _ZN3sce2npltERKNS0_4TimeES3_,
+                            _ZN3sce2npleERKNS0_4TimeES3_, _ZN3sce2npgtERKNS0_4TimeES3_, _ZN3sce2npgeERKNS0_4TimeES3_};
+    const Compare tickFirst[] = {_ZN3sce2npeqERK10SceRtcTickRKNS0_4TimeE, _ZN3sce2npneERK10SceRtcTickRKNS0_4TimeE,
+                                 _ZN3sce2npltERK10SceRtcTickRKNS0_4TimeE, _ZN3sce2npleERK10SceRtcTickRKNS0_4TimeE,
+                                 _ZN3sce2npgtERK10SceRtcTickRKNS0_4TimeE, _ZN3sce2npgeERK10SceRtcTickRKNS0_4TimeE};
+    const Compare timeFirst[] = {_ZN3sce2npeqERKNS0_4TimeERK10SceRtcTick, _ZN3sce2npneERKNS0_4TimeERK10SceRtcTick,
+                                 _ZN3sce2npltERKNS0_4TimeERK10SceRtcTick, _ZN3sce2npleERKNS0_4TimeERK10SceRtcTick,
+                                 _ZN3sce2npgtERKNS0_4TimeERK10SceRtcTick, _ZN3sce2npgeERKNS0_4TimeERK10SceRtcTick};
+    const NpTime aliasLow{5 + 0x100000000ull};
+    const struct { const NpTime* lhs; const NpTime* rhs; bool expected[6]; } pairs[] = {
+        {&low, &high, {false, true, true, true, false, false}},
+        {&high, &low, {false, true, false, false, true, true}},
+        {&low, &step, {true, false, false, true, false, true}},
+        {&low, &aliasLow, {false, true, true, true, false, false}},
+    };
+    const Compare* const formSets[] = {same, tickFirst, timeFirst};
+    for (const Compare* forms : formSets) {
+        for (const auto& pair : pairs) {
+            for (int op = 0; op < 6; ++op) CHECK(forms[op](pair.lhs, pair.rhs) == pair.expected[op]);
+        }
+    }
     std::puts("NP common RTC tests passed");
     return 0;
 }
