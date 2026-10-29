@@ -1,4 +1,5 @@
 #include "prx/libSceFreeType/include/Api.hpp"
+#include "prx/libSceFreeType/include/GuestObjects.hpp"
 #include "prx/libc/include/General.hpp"
 
 #include <ft2build.h>
@@ -38,7 +39,7 @@ const FT_Module_Class* ModuleClass(const T& value) {
 }
 
 int AddModule(void* library, const FT_Module_Class* module) {
-    const auto host = static_cast<FT_Library>(library);
+    const auto host = library ? static_cast<GuestLibrary*>(library)->host : nullptr;
     if (!host) return 0x21;
     if (!module) return 6;
     const auto existing = FT_Get_Module(host, module->module_name);
@@ -52,7 +53,7 @@ int SupportModule(void* library, const FT_Module_Class* module) {
 }
 
 int RemoveModule(void* library, const char* name) {
-    const auto host = static_cast<FT_Library>(library);
+    const auto host = library ? static_cast<GuestLibrary*>(library)->host : nullptr;
     if (!host) return 0x21;
     FT_Module module = FT_Get_Module(host, name);
     if (!module) return 0;
@@ -329,7 +330,8 @@ void APS5_VABI sceFreeTypeOlFree_nid_postfix(GuestMemoryRec* memory, void** bloc
 APS5_EXPORT("fHMsRluEMfI", sceFreeTypeOlFree_nid_postfix);
 
 const void* APS5_VABI sceFreeTypeOlGetModuleInterface_nid_postfix(void* library, const char* name) {
-    return library && name ? FT_Get_Module_Interface(static_cast<FT_Library>(library), name) : nullptr;
+    const auto host = library ? static_cast<GuestLibrary*>(library)->host : nullptr;
+    return host && name ? FT_Get_Module_Interface(host, name) : nullptr;
 }
 APS5_EXPORT("5NYsP564wwY", sceFreeTypeOlGetModuleInterface_nid_postfix);
 
@@ -401,23 +403,11 @@ int APS5_VABI sceFreeTypeOlFtaSupportRendererSmooth_nid_postfix(void* library) {
 APS5_EXPORT("b7S96aD8dkE", sceFreeTypeOlFtaSupportRendererSmooth_nid_postfix);
 
 
-int APS5_VABI sceFreeTypeOlAttachStream_nid_postfix(FT_Face face, FT_Open_Args* args) {
-    return FT_Attach_Stream(face, args);
-}
-APS5_EXPORT("ZqvTX8u1bEc", sceFreeTypeOlAttachStream_nid_postfix);
-
-void APS5_VABI sceFreeTypeOlCMapDone_nid_postfix(FT_CMap cmap) {
-    FT_CMap_Done(cmap);
-}
-APS5_EXPORT("h0n4Fb9j2R8", sceFreeTypeOlCMapDone_nid_postfix);
-
-int APS5_VABI sceFreeTypeOlCMapNew_nid_postfix(FT_CMap_Class clazz, FT_Pointer initData, FT_CharMap charmap, FT_CMap* output) {
-    return FT_CMap_New(clazz, initData, charmap, output);
-}
-APS5_EXPORT("wLqQQWyOdpc", sceFreeTypeOlCMapNew_nid_postfix);
-
-void APS5_VABI sceFreeTypeOlDoneGlyphSlot_nid_postfix(FT_GlyphSlot slot) {
-    FT_Done_GlyphSlot(slot);
+void APS5_VABI sceFreeTypeOlDoneGlyphSlot_nid_postfix(GuestGlyphSlotRec* slot) {
+    if (!slot) return;
+    auto* owner = static_cast<GuestFace*>(slot->internal);
+    if (!owner || slot != &owner->slot || !owner->host) return;
+    if (owner->host->glyph) FT_Done_GlyphSlot(owner->host->glyph);
 }
 APS5_EXPORT("oJm1lThZ3iQ", sceFreeTypeOlDoneGlyphSlot_nid_postfix);
 
