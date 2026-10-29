@@ -2,11 +2,21 @@
 
 ### Silent stubs requiring Sony-specific or shared-state behavior
 
-The PS5 3.20 export inventory and verified NID-name database identify 92 exports in this library. The decrypted local PS5 13.60 `libSceFreeTypeOl.sprx` (SHA-256 `61E0CDB1628968A9D26790D8F6C2874C0CBF86193DC1762BA83E434CF229BADA`) was analyzed locally with Ghidra; no binary or decompilation is included in this repository. The analysis confirmed the FreeType wrapper signatures and the shared-library module lifecycle.
+The PS5 3.20 export inventory and verified NID-name database identify 92 exports in this library. The decrypted local PS5 13.60 `libSceFreeTypeOl.sprx` (SHA-256 `61E0CDB1628968A9D26790D8F6C2874C0CBF86193DC1762BA83E434CF229BADA`) was analyzed locally with Ghidra; no binary or decompilation is included in this repository. The analysis informed the FreeType wrapper signatures and shared-library module lifecycle; no byte-for-byte console call trace is included.
 
 Implemented wrappers are in [ModuleWrappers.cpp](../../../core/libs/prx/libSceFreeTypeOl/ModuleWrappers.cpp); the remaining NID aliases are in [Export.cpp](../../../core/libs/prx/libSceFreeTypeOl/Export.cpp).
 
 Sixty-seven exports now forward to the bundled FreeType implementation: add/export/remove helpers for the 18 available module classes, the basic module support helpers, allocator/free, module-interface lookup, module registration, and glyph-slot destruction. Library handles are translated through `GuestLibrary::host`, and glyph-slot destruction operates on the native slot owned by the corresponding `GuestFace`. Focused guest-bridge coverage is in `GuestFreeTypeOlModules.cpp`.
+
+### Signature and layout provenance
+
+NID labels and the 92-export inventory come from the verified NID-name mapping. The decrypted 13.60 disassembly inspected with Ghidra informed the wrapper call shapes, cross-checked against FreeType's module API declarations. This port uses the existing 64-bit guest-pointer representations (`GuestLibrary*`, `GuestFaceRec*` and `GuestGlyphSlotRec*`), 32-bit `int` error results, and 64-bit guest allocation sizes (`std::int64_t`) and callbacks from the existing `libSceFreeType` guest types. These choices are inferred bridge types, not a claim that every original Sony argument or return width was independently established from an instrumented console trace.
+
+The built-in module descriptors and their fields come from the bundled FreeType internal headers `freetype/internal/ftobjs.h` and `ftdrv.h` (currently FreeType 2.13.3). They are native `FT_Module_Class` / `FT_Driver_ClassRec` / `FT_Renderer_Class` objects, not a separately reconstructed Sony guest module-class layout. In particular, native `FT_Long` fields are host-width and may differ from 64-bit PS5 expectations on Windows, and native callback pointers are not guest ABI trampolines. Guest-defined module classes and callbacks still require a dedicated bridge; code passing native module descriptors across the boundary remains sensitive to host layout and must not be treated as validated console compatibility.
+
+### System dependencies
+
+With `ANYPS5_USE_SYSTEM_DEPS=ON`, the `freetype` CMake target is an `INTERFACE` wrapper around the installed library. Bundled GX/OpenType validation C sources, private FreeType headers and module-class objects are not present. In this mode the 67 module-wrapper NIDs compile as explicit throwing stubs and the other 25 remain unchanged, preserving all 92 export aliases without calling unavailable internals. The bundled-only module regression test is omitted; the existing outline-border tests remain registered. The full 67-export implementation is built only with bundled FreeType.
 
 The remaining 25 exports deliberately retain `NotImplemented_nid_no_patch` because they require unavailable Sony-specific modules/state or a guest/native bridge that is not yet implemented:
 
