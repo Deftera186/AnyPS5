@@ -4,6 +4,9 @@ target_sources(freetype PRIVATE
 add_library(libSceFreeTypeOl SHARED EXCLUDE_FROM_ALL Export.cpp ModuleWrappers.cpp ../libSceFreeType/src/OutlineBorders.cpp)
 target_include_directories(libSceFreeTypeOl PRIVATE ${LIBS_INCLUDE_DIR})
 target_link_libraries(libSceFreeTypeOl PRIVATE freetype)
+if(MINGW OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_options(libSceFreeTypeOl PRIVATE LINKER:--exclude-libs,ALL)
+endif()
 configure_windows_unwind(libSceFreeTypeOl)
 
 if(BUILD_TESTING)
