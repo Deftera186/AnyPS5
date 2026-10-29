@@ -1,8 +1,26 @@
-add_library(libSceFreeTypeOl SHARED EXCLUDE_FROM_ALL Export.cpp ../libSceFreeType/src/OutlineBorders.cpp)
+target_sources(freetype PRIVATE
+    ${PROJECT_SOURCE_DIR}/3rdparty/freetype/src/gxvalid/gxvalid.c
+    ${PROJECT_SOURCE_DIR}/3rdparty/freetype/src/otvalid/otvalid.c)
+add_library(libSceFreeTypeOl SHARED EXCLUDE_FROM_ALL Export.cpp ModuleWrappers.cpp ../libSceFreeType/src/OutlineBorders.cpp)
 target_include_directories(libSceFreeTypeOl PRIVATE ${LIBS_INCLUDE_DIR})
+target_link_libraries(libSceFreeTypeOl PRIVATE freetype)
 configure_windows_unwind(libSceFreeTypeOl)
 
 if(BUILD_TESTING)
+    add_test_executable(guest_freetype_ol_module_tests ${LIBS_INCLUDE_DIR}/tests/GuestFreeTypeOlModules.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ModuleWrappers.cpp)
+    target_include_directories(guest_freetype_ol_module_tests PRIVATE ${LIBS_INCLUDE_DIR})
+    target_link_libraries(guest_freetype_ol_module_tests PRIVATE freetype)
+    if(WIN32)
+        target_link_libraries(guest_freetype_ol_module_tests PRIVATE libc)
+    endif()
+    configure_windows_unwind(guest_freetype_ol_module_tests)
+    add_test(NAME guest_freetype_ol_modules COMMAND guest_freetype_ol_module_tests)
+    set_tests_properties(guest_freetype_ol_modules PROPERTIES TIMEOUT 20)
+    if(WIN32)
+        set_tests_properties(guest_freetype_ol_modules PROPERTIES ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:${UNPATCHED_DIR};PATH=path_list_prepend:$<TARGET_FILE_DIR:guest_freetype_ol_module_tests>")
+    endif()
     add_test_executable(guest_freetype_outline_border_tests ${LIBS_INCLUDE_DIR}/tests/GuestFreeTypeOutlineBorder.cpp)
     target_include_directories(guest_freetype_outline_border_tests PRIVATE ${LIBS_INCLUDE_DIR})
     target_link_libraries(guest_freetype_outline_border_tests PRIVATE freetype ${CMAKE_DL_LIBS})
