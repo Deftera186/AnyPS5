@@ -100,6 +100,20 @@ int main() {
     REQUIRE(block == nullptr);
 
     const auto font = SquareGlyphFont('A', 700, true);
+    GuestFaceRec* activeFace = nullptr;
+    REQUIRE(FT_New_Memory_Face_nid_postfix(library, font.data(), font.size(), 0, &activeFace) == 0);
+    REQUIRE(activeFace != nullptr);
+    REQUIRE(FT_Get_Module(native, "truetype") != nullptr);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleTruetype_nid_postfix(library) == 6);
+    REQUIRE(FT_Get_Module(native, "truetype") != nullptr);
+    REQUIRE(FT_Select_Charmap_nid_postfix(activeFace, FT_ENCODING_UNICODE) == 0);
+    REQUIRE(FT_Get_Char_Index_nid_postfix(activeFace, 'A') != 0);
+    REQUIRE(FT_Done_Face_nid_postfix(activeFace) == 0);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleTruetype_nid_postfix(library) == 0);
+    REQUIRE(FT_Get_Module(native, "truetype") == nullptr);
+    sceFreeTypeOlFtaAddModuleTruetype_nid_postfix(library);
+    REQUIRE(FT_Get_Module(native, "truetype") != nullptr);
+
     GuestFaceRec* face = nullptr;
     REQUIRE(FT_New_Memory_Face_nid_postfix(library, font.data(), font.size(), 0, &face) == 0);
     REQUIRE(face != nullptr && face->glyph != nullptr);
