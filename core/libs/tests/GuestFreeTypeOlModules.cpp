@@ -12,6 +12,8 @@
 #include <cstdlib>
 
 using FreeType::GuestMemoryRec;
+using FreeType::GuestLibrary;
+using FreeType::GuestFaceRec;
 
 static void Require(bool condition, int line) {
     if (!condition) {
