@@ -108,12 +108,16 @@ int SupportModule(void* library, const FT_Module_Class* module) {
 }
 
 int RemoveModule(void* library, const char* name) {
-    const auto host = library ? static_cast<GuestLibrary*>(library)->host : nullptr;
+    auto* guest = static_cast<GuestLibrary*>(library);
+    const auto host = guest ? guest->host : nullptr;
     if (!host) return 0x21;
     FT_Module module = FT_Get_Module(host, name);
     if (!module) return 0;
-    FT_Remove_Module(host, module);
-    return 0;
+    for (const auto& face : guest->faces) {
+        if (face->host && reinterpret_cast<FT_Module>(face->host->driver) == module)
+            return FT_Err_Invalid_Argument;
+    }
+    return FT_Remove_Module(host, module);
 }
 }
 
