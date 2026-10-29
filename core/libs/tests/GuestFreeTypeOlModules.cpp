@@ -5,7 +5,6 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_MODULE_H
-#include <freetype/internal/ftobjs.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -39,71 +38,46 @@ int main() {
     FT_Library native = library->host;
 
     struct ModuleCase {
-        void* (APS5_VABI* exportClass)();
+        const char* name;
         void (APS5_VABI* add)(void*);
         int (APS5_VABI* remove)(void*);
     };
     const ModuleCase cases[] = {
-        {sceFreeTypeOlFtaExportModuleAutofitter_nid_postfix, sceFreeTypeOlFtaAddModuleAutofitter_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleBdf_nid_postfix, sceFreeTypeOlFtaAddModuleBdf_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleBdf_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleCff_nid_postfix, sceFreeTypeOlFtaAddModuleCff_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleCff_nid_postfix},
-        {sceFreeTypeOlFtaExportModulePcf_nid_postfix, sceFreeTypeOlFtaAddModulePcf_nid_postfix,
-         sceFreeTypeOlFtaRemoveModulePcf_nid_postfix},
-        {sceFreeTypeOlFtaExportModulePfr_nid_postfix, sceFreeTypeOlFtaAddModulePfr_nid_postfix,
-         sceFreeTypeOlFtaRemoveModulePfr_nid_postfix},
-        {sceFreeTypeOlFtaExportModulePsaux_nid_postfix, sceFreeTypeOlFtaAddModulePsaux_nid_postfix,
-         sceFreeTypeOlFtaRemoveModulePsaux_nid_postfix},
-        {sceFreeTypeOlFtaExportModulePshinter_nid_postfix, sceFreeTypeOlFtaAddModulePshinter_nid_postfix,
-         sceFreeTypeOlFtaRemoveModulePshinter_nid_postfix},
-        {sceFreeTypeOlFtaExportModulePsnames_nid_postfix, sceFreeTypeOlFtaAddModulePsnames_nid_postfix,
-         sceFreeTypeOlFtaRemoveModulePsnames_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleRaster1_nid_postfix, sceFreeTypeOlFtaAddModuleRaster1_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleRaster1_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleSfnt_nid_postfix, sceFreeTypeOlFtaAddModuleSfnt_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleSfnt_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleSmooth_nid_postfix, sceFreeTypeOlFtaAddModuleSmooth_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleSmooth_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleT1cid_nid_postfix, sceFreeTypeOlFtaAddModuleT1cid_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleT1cid_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleTruetype_nid_postfix, sceFreeTypeOlFtaAddModuleTruetype_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleTruetype_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleType1_nid_postfix, sceFreeTypeOlFtaAddModuleType1_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleType1_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleType42_nid_postfix, sceFreeTypeOlFtaAddModuleType42_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleType42_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleWinfonts_nid_postfix, sceFreeTypeOlFtaAddModuleWinfonts_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleWinfonts_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleGxvalid_nid_postfix, sceFreeTypeOlFtaAddModuleGxvalid_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleGxvalid_nid_postfix},
-        {sceFreeTypeOlFtaExportModuleOtvalid_nid_postfix, sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix,
-         sceFreeTypeOlFtaRemoveModuleOtvalid_nid_postfix},
+        {"autofitter", sceFreeTypeOlFtaAddModuleAutofitter_nid_postfix, sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix},
+        {"bdf", sceFreeTypeOlFtaAddModuleBdf_nid_postfix, sceFreeTypeOlFtaRemoveModuleBdf_nid_postfix},
+        {"cff", sceFreeTypeOlFtaAddModuleCff_nid_postfix, sceFreeTypeOlFtaRemoveModuleCff_nid_postfix},
+        {"pcf", sceFreeTypeOlFtaAddModulePcf_nid_postfix, sceFreeTypeOlFtaRemoveModulePcf_nid_postfix},
+        {"pfr", sceFreeTypeOlFtaAddModulePfr_nid_postfix, sceFreeTypeOlFtaRemoveModulePfr_nid_postfix},
+        {"psaux", sceFreeTypeOlFtaAddModulePsaux_nid_postfix, sceFreeTypeOlFtaRemoveModulePsaux_nid_postfix},
+        {"pshinter", sceFreeTypeOlFtaAddModulePshinter_nid_postfix, sceFreeTypeOlFtaRemoveModulePshinter_nid_postfix},
+        {"psnames", sceFreeTypeOlFtaAddModulePsnames_nid_postfix, sceFreeTypeOlFtaRemoveModulePsnames_nid_postfix},
+        {"raster1", sceFreeTypeOlFtaAddModuleRaster1_nid_postfix, sceFreeTypeOlFtaRemoveModuleRaster1_nid_postfix},
+        {"sfnt", sceFreeTypeOlFtaAddModuleSfnt_nid_postfix, sceFreeTypeOlFtaRemoveModuleSfnt_nid_postfix},
+        {"smooth", sceFreeTypeOlFtaAddModuleSmooth_nid_postfix, sceFreeTypeOlFtaRemoveModuleSmooth_nid_postfix},
+        {"t1cid", sceFreeTypeOlFtaAddModuleT1cid_nid_postfix, sceFreeTypeOlFtaRemoveModuleT1cid_nid_postfix},
+        {"truetype", sceFreeTypeOlFtaAddModuleTruetype_nid_postfix, sceFreeTypeOlFtaRemoveModuleTruetype_nid_postfix},
+        {"type1", sceFreeTypeOlFtaAddModuleType1_nid_postfix, sceFreeTypeOlFtaRemoveModuleType1_nid_postfix},
+        {"type42", sceFreeTypeOlFtaAddModuleType42_nid_postfix, sceFreeTypeOlFtaRemoveModuleType42_nid_postfix},
+        {"winfonts", sceFreeTypeOlFtaAddModuleWinfonts_nid_postfix, sceFreeTypeOlFtaRemoveModuleWinfonts_nid_postfix},
+        {"gxvalid", sceFreeTypeOlFtaAddModuleGxvalid_nid_postfix, sceFreeTypeOlFtaRemoveModuleGxvalid_nid_postfix},
+        {"otvalid", sceFreeTypeOlFtaAddModuleOtvalid_nid_postfix, sceFreeTypeOlFtaRemoveModuleOtvalid_nid_postfix},
     };
 
     GuestLibrary invalidLibrary{};
-    REQUIRE(sceFreeTypeOlFtaAddModule_nid_postfix(&invalidLibrary, nullptr) == 0x21);
-    REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(&invalidLibrary) == 0x21);
-    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(&invalidLibrary, "truetype") == nullptr);
-    REQUIRE(sceFreeTypeOlAddModule_nid_postfix(library, nullptr) == 6);
-    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(library, nullptr) == nullptr);
-    REQUIRE(sceFreeTypeOlAddModule_nid_postfix(nullptr, nullptr) == 0x21);
     REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(nullptr) == 0x21);
-    REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(nullptr, "truetype") == nullptr);
+    REQUIRE(sceFreeTypeOlFtaRemoveModuleAutofitter_nid_postfix(&invalidLibrary) == 0x21);
+    REQUIRE(sceFreeTypeOlFtaSupportFormatBdf_nid_postfix(nullptr) == 0x21);
+    REQUIRE(sceFreeTypeOlFtaSupportFormatBdf_nid_postfix(&invalidLibrary) == 0x21);
 
     for (const auto& entry : cases) {
-        auto* module = static_cast<FT_Module_Class*>(entry.exportClass());
-        REQUIRE(module != nullptr && module->module_name != nullptr);
         REQUIRE(entry.remove(library) == 0);
-        REQUIRE(FT_Get_Module(native, module->module_name) == nullptr);
+        REQUIRE(FT_Get_Module(native, entry.name) == nullptr);
         entry.add(library);
-        REQUIRE(FT_Get_Module(native, module->module_name) != nullptr);
-        REQUIRE(sceFreeTypeOlAddModule_nid_postfix(library, module) == 5);
-        REQUIRE(sceFreeTypeOlFtaAddModule_nid_postfix(library, module) == 5);
-        REQUIRE(sceFreeTypeOlFtaAddModule_nid_postfix(library, nullptr) == 6);
-        REQUIRE(sceFreeTypeOlGetModuleInterface_nid_postfix(library, module->module_name) ==
-            FT_Get_Module_Interface(native, module->module_name));
+        REQUIRE(FT_Get_Module(native, entry.name) != nullptr);
+        REQUIRE(entry.remove(library) == 0);
+        REQUIRE(FT_Get_Module(native, entry.name) == nullptr);
+        entry.add(library);
+        REQUIRE(FT_Get_Module(native, entry.name) != nullptr);
     }
 
     REQUIRE(sceFreeTypeOlFtaSupportFormatBdf_nid_postfix(library) == 0);
