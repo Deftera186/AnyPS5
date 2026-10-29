@@ -9,11 +9,11 @@
 #include <mutex>
 #include <random>
 #include <stdexcept>
-#include <string>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include "SceTypes.hpp"
 #include "prx/libc/include/MallocManagedSize.hpp"
 #include "prx/libc/include/General.hpp"
