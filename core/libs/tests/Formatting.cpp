@@ -2,6 +2,7 @@
 #include "SceTypes.hpp"
 #include "prx/libc/include/ApplicationHeap.hpp"
 #include "prx/libc/include/GuestHeap.hpp"
+#include "prx/libc/include/ScanQuadLength.hpp"
 #include <algorithm>
 #include <array>
 #include <climits>
@@ -198,11 +199,20 @@ static void CheckIntegerScanWidths() {
     unsigned long long unsignedQuad = 0x5555555555555555ull;
     *__error_nid_postfix() = 0;
     Require(sscanf_nid_postfix("18446744073709551616", "%llu", &unsignedQuad) == 1 && unsignedQuad == 0xffffffffffffffffull && *__error_nid_postfix() == 34);
-#ifdef _WIN32
     quad = 0x5555555555555555ll;
     *__error_nid_postfix() = 0;
     Require(sscanf_nid_postfix("5", "%qd", &quad) == 0 && quad == 0x5555555555555555ll && *__error_nid_postfix() == 0);
-#endif
+    int leading = 0;
+    Require(sscanf_nid_postfix("7 5", "%d %qd", &leading, &quad) == 1 && leading == 7 && quad == 0x5555555555555555ll);
+    leading = 0;
+    Require(ScanList("7 5", "%d %qd", &leading, &quad) == 1 && leading == 7 && quad == 0x5555555555555555ll);
+    char16_t quadWide[4] = {u'!', u'!', u'!', u'!'};
+    Require(sscanf_nid_postfix("ab cd", "%qS", quadWide) == 0 && quadWide[0] == u'!');
+    leading = 0;
+    Require(sscanf_nid_postfix("%qd 9", "%%qd %d", &leading) == 1 && leading == 9);
+    const char* const quadFormat = "%*3d %%q %[^q]%qd";
+    Require(LibcDetail::FindQuadScanDirective(quadFormat) == quadFormat + 14);
+    Require(LibcDetail::FindQuadScanDirective("%d %%qd %lld") == nullptr);
     int first = 7;
     int second = 7;
     int position = 0;
@@ -246,7 +256,35 @@ static void CheckSecureFormat() {
     Require(threw);
 }
 
+static void CheckScanInputFailureErrno() {
+    const int previousError = *__error_nid_postfix();
+    for (const auto scan : {sscanf_nid_postfix, ScanList}) {
+        for (const int savedError : {0, 22, 97}) {
+            for (const char* input : {"", " ", "   "}) {
+                std::array<char, 8> word;
+                word.fill('!');
+                *__error_nid_postfix() = savedError;
+                Require(scan(input, "%s", word.data()) == EOF && *__error_nid_postfix() == savedError);
+                Require(std::all_of(word.begin(), word.end(), [](char value) { return value == '!'; }));
+                int number = 123;
+                *__error_nid_postfix() = savedError;
+                Require(scan(input, "%d", &number) == EOF && number == 123 && *__error_nid_postfix() == savedError);
+                float floating = 1.0f;
+                *__error_nid_postfix() = savedError;
+                Require(scan(input, "%f", &floating) == EOF && floating == 1.0f && *__error_nid_postfix() == savedError);
+                *__error_nid_postfix() = savedError;
+                Require(scan(input, "%*s") == EOF && *__error_nid_postfix() == savedError);
+            }
+        }
+        float floating = 0.0f;
+        *__error_nid_postfix() = 97;
+        Require(scan("1e99999", "%f", &floating) == 1 && std::isinf(floating) && *__error_nid_postfix() == 34);
+    }
+    *__error_nid_postfix() = previousError;
+}
+
 __attribute__((noinline)) static void APS5_VABI RunChecks() {
+    CheckScanInputFailureErrno();
     char buffer[1024];
     Require(FormatList(buffer, sizeof(buffer), "Mount requested: %d", 0) == 18);
     Require(std::strcmp(buffer, "Mount requested: 0") == 0);

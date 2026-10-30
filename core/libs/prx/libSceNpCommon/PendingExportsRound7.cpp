@@ -131,11 +131,6 @@ int APS5_VABI _ZN3sce2np9JsonArray12AddItemArrayEPPS1_(void) {
     return 0;
 }
 
-int APS5_VABI _ZN3sce2np6ObjectdaEPv(void) {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
-}
-
 int APS5_VABI _ZN3sce2np14CalloutContextD0Ev(void) {
     NotImplemented_nid_no_patch(__func__);
     return 0;
@@ -237,11 +232,6 @@ int APS5_VABI _ZN3sce2np12HttpTemplate19SetAuthInfoCallbackEPFii15SceHttpAuthTyp
 }
 
 int APS5_VABI sceNpUtilParseJid(void) {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
-}
-
-int APS5_VABI _ZN3sce2np6ObjectnaEmR16SceNpAllocatorEx(void) {
     NotImplemented_nid_no_patch(__func__);
     return 0;
 }
@@ -506,22 +496,12 @@ int APS5_VABI _ZN3sce2np14JsonDocBuilderC1ERKNS0_9JsonValueE(void) {
     return 0;
 }
 
-int APS5_VABI _ZN3sce2np6ObjectdlEPvR16SceNpAllocatorEx(void) {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
-}
-
 int APS5_VABI _ZN3sce2np9HttpTransD2Ev(void) {
     NotImplemented_nid_no_patch(__func__);
     return 0;
 }
 
 int APS5_VABI _ZN3sce2np12HttpTemplateC2Ev(void) {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
-}
-
-int APS5_VABI _ZN3sce2np6ObjectdaEPvR14SceNpAllocator(void) {
     NotImplemented_nid_no_patch(__func__);
     return 0;
 }
@@ -577,11 +557,6 @@ int APS5_VABI _ZN3sce2np13RingBufMemory6IsInitEv(void) {
 }
 
 int APS5_VABI _ZN3sce2np7RingBufD0Ev(void) {
-    NotImplemented_nid_no_patch(__func__);
-    return 0;
-}
-
-int APS5_VABI _ZN3sce2np6ObjectnwEmR16SceNpAllocatorEx(void) {
     NotImplemented_nid_no_patch(__func__);
     return 0;
 }
