@@ -66,9 +66,6 @@ emscripten::val Convert(const emscripten::val& request, const emscripten::val& c
                 (*path.begin() != "sce_module" && *path.begin() != "sce_modules" && *path.begin() != "prx")) throw std::invalid_argument("Invalid module path");
             input.Modules.push_back({Io::NativePath("/input") / path, ReadBytes(module["bytes"], remaining)});
         }
-        input.RuntimeDirectories.push_back("/input/sce_module");
-        input.RuntimeDirectories.push_back("/input/sce_modules");
-        input.RuntimeDirectories.push_back("/input/prx");
         if (!request["icon"].isNull()) input.Icon = ReadBytes(request["icon"], remaining);
         Relinker::ConversionOptions options;
         options.Target = target == "windows" ? Relinker::TargetSystem::Windows : Relinker::TargetSystem::Linux;
