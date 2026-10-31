@@ -33,6 +33,8 @@ jobs:
         run: node demo/web/tests/archive-root.test.mjs demo/web
       - name: Test archive Windows paths
         run: node demo/web/tests/archive-windows.test.mjs demo/web
+      - name: Test archive reserved names
+        run: node demo/web/tests/archive-reserved.test.mjs demo/web
       - name: Check browser module syntax
         run: |
           node --check demo/web/app.mjs
