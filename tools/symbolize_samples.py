@@ -348,6 +348,8 @@ def symbolize(parser, args):
     samples = load(args.samples, args.thread)
     if args.since:
         samples = window(samples, load(args.since, args.thread))
+    if args.out and not samples.stacks:
+        parser.error("--out needs a collapsed-stack file")
     if args.out and samples.stacks:
         referenced_modules = {name.lower() for name, _ in samples.self_counts}
         referenced_modules.update(name.lower() for name, _ in samples.inclusive)
@@ -377,8 +379,6 @@ def symbolize(parser, args):
     for line in summarize(symbolizer, samples, args.top):
         print(line)
     if args.out:
-        if not samples.stacks:
-            parser.error("--out needs a collapsed-stack file")
         with open(args.out, "w", encoding="utf-8") as output:
             for frames, count in samples.stacks.items():
                 output.write(";".join(symbolizer.frame(frame) for frame in frames.split(";")) + f" {count}\n")
