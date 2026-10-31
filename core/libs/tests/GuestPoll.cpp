@@ -359,6 +359,21 @@ int main() {
     Require(poll_nid_postfix(&single, 1, -2) == -1 && *__error_nid_postfix() == 22);
     *__error_nid_postfix() = 0;
     Require(poll_nid_postfix(reinterpret_cast<GuestPollDescriptor*>(std::uintptr_t{0x10}), 1, 0) == -1 && *__error_nid_postfix() == 14);
+    GuestResourceLimit fileLimit{};
+    Require(getrlimit_nid_postfix(8, &fileLimit) == 0);
+    *__error_nid_postfix() = 0;
+    Require(poll_nid_postfix(&single, 0xffffffffu, 0) == -1 && *__error_nid_postfix() == 22);
+    *__error_nid_postfix() = 0;
+    Require(poll_nid_postfix(nullptr, 0xffffffffu, 0) == -1 && *__error_nid_postfix() == 22);
+    if (fileLimit.rlim_max >= 1024 && fileLimit.rlim_max < 100000) {
+        const auto atLimit = static_cast<std::uint32_t>(fileLimit.rlim_max);
+        *__error_nid_postfix() = 0;
+        Require(poll_nid_postfix(nullptr, atLimit, 0) == -1 && *__error_nid_postfix() == 14);
+        *__error_nid_postfix() = 0;
+        Require(poll_nid_postfix(nullptr, atLimit + 1, 0) == -1 && *__error_nid_postfix() == 22);
+        *__error_nid_postfix() = 0;
+        Require(poll_nid_postfix(reinterpret_cast<GuestPollDescriptor*>(std::uintptr_t{0x10}), atLimit + 1, 0) == -1 && *__error_nid_postfix() == 22);
+    }
     void* page = nullptr;
     Require(sceKernelMapFlexibleMemory(&page, 0x4000, 3, 0) == 0 && page != nullptr);
     auto* readOnly = static_cast<GuestPollDescriptor*>(page);

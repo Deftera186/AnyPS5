@@ -2115,6 +2115,10 @@ static int PollDescriptors(GuestPollDescriptor* descriptors, std::uint32_t count
 
 int APS5_VABI poll_nid_postfix(GuestPollDescriptor* descriptors, std::uint32_t count, int timeout) {
     if (timeout < -1) return Fail(22);
+    if (count > 1024) {
+        GuestResourceLimit limit{};
+        if (getrlimit_nid_postfix(8, &limit) == 0 && static_cast<std::int64_t>(count) > limit.rlim_max) return Fail(22);
+    }
     if (count && !descriptors) return Fail(14);
     std::vector<GuestPollDescriptor> local(count);
     const auto bytes = local.size() * sizeof(GuestPollDescriptor);
