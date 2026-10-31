@@ -2,6 +2,8 @@ add_library(libwebrtc SHARED EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/Export
 target_include_directories(libwebrtc PRIVATE ${LIBS_INCLUDE_DIR})
 configure_windows_unwind(libwebrtc)
 
+target_sources(libwebrtc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/ExpFilter.cpp)
+
 if(BUILD_TESTING)
     add_test_executable(guest_webrtc_fast_int_to_buffer_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/FastIntToBuffer.cpp)
     target_include_directories(guest_webrtc_fast_int_to_buffer_tests PRIVATE ${LIBS_INCLUDE_DIR})
@@ -22,5 +24,15 @@ if(BUILD_TESTING)
     if(WIN32)
         set_tests_properties(guest_webrtc_time PROPERTIES ENVIRONMENT_MODIFICATION
             "PATH=path_list_prepend:$<TARGET_FILE_DIR:libwebrtc>;PATH=path_list_prepend:$<TARGET_FILE_DIR:libkernel>;PATH=path_list_prepend:$<TARGET_FILE_DIR:libc>")
+    endif()
+    add_test_executable(guest_webrtc_exp_filter_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/ExpFilter.cpp)
+    target_include_directories(guest_webrtc_exp_filter_tests PRIVATE ${LIBS_INCLUDE_DIR})
+    target_link_libraries(guest_webrtc_exp_filter_tests PRIVATE libwebrtc libc)
+    configure_windows_unwind(guest_webrtc_exp_filter_tests)
+    add_test(NAME guest_webrtc_exp_filter COMMAND guest_webrtc_exp_filter_tests)
+    set_tests_properties(guest_webrtc_exp_filter PROPERTIES TIMEOUT 20)
+    if(WIN32)
+        set_tests_properties(guest_webrtc_exp_filter PROPERTIES ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:libwebrtc>")
     endif()
 endif()
