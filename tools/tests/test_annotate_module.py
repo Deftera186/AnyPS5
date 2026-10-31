@@ -247,6 +247,15 @@ class AnnotateModuleTests(unittest.TestCase):
         self.run_tool(build_module(), "--no-names")
         self.assertIn("; -> " + nid(IMPORT_NAME), self.read(".asm"))
 
+    def test_a_temporary_directory_outside_the_ansi_code_page_is_disassembled(self):
+        temporary = self.root / "тест 界 \U0001f3ae"
+        temporary.mkdir()
+        with mock.patch.object(tempfile, "tempdir", str(temporary)):
+            summary = self.annotate(build_module())
+        self.assertIn("1 imports, 1 exports, 0 tls, 1 stubs", summary)
+        self.assertTrue(instruction(self.read(".asm").splitlines(), "call").endswith("; -> " + IMPORT_NAME))
+        self.assertEqual([], list(temporary.iterdir()))
+
     def test_mismatching_database_name_is_not_used(self):
         wrong = self.root / "wrong.csv"
         wrong.write_text("%s sceKernelOther\n" % nid(IMPORT_NAME), encoding="utf-8")
