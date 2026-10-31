@@ -9,7 +9,6 @@ struct Asn1String {
     std::int64_t flags;
 };
 
-// LibreSSL 2.5.4 GENERAL_NAME: a 32-bit CHOICE selector and a pointer union.
 struct LibreSslGeneralName {
     std::int32_t type;
     void* value;

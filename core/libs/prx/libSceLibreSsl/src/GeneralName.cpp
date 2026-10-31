@@ -4,10 +4,6 @@
 #include <cstdint>
 #include <stdexcept>
 
-
-
-
-
 static_assert(sizeof(LibreSslGeneralName) == 16);
 static_assert(offsetof(LibreSslGeneralName, value) == 8);
 static_assert(sizeof(Asn1String) == 24);
@@ -66,8 +62,6 @@ static_assert(sizeof(Buffer) == 24 && offsetof(Buffer, capacity) == 16);
 static_assert(sizeof(X509NameEntry) == 24 && offsetof(X509NameEntry, set) == 16);
 static_assert(sizeof(X509Name) == 40 && offsetof(X509Name, bytes) == 16);
 static_assert(offsetof(X509Name, canonical) == 24);
-
-
 
 void Wipe(void* pointer, std::size_t size) {
     auto* bytes = static_cast<volatile unsigned char*>(pointer);

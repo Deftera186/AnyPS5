@@ -145,7 +145,6 @@ void TestSimpleNames() {
     GENERAL_NAME_free_nid_postfix(Name(1, string));
     CheckClean();
 
-
     std::array<unsigned char, 6> borrowed{1, 2, 3, 4, 5, 6};
     string = String(0, 0x10);
     string->length = static_cast<int>(borrowed.size());
