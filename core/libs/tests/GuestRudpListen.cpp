@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <stdexcept>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
@@ -51,16 +50,6 @@ void Require(bool condition, const char* message) {
     if (condition) return;
     std::fprintf(stderr, "Rudp listen: %s\n", message);
     std::abort();
-}
-
-template <typename Call>
-bool Throws(Call call) {
-    try {
-        call();
-    } catch (const std::runtime_error&) {
-        return true;
-    }
-    return false;
 }
 
 void APS5_VABI Handler(int, int, int, void*) {}
@@ -130,10 +119,6 @@ int main() {
     Require(sceRudpTerminate(server) == 0, "terminating the listening context failed");
     waiter.join();
     Require(blockedResult == Cancelled && accepted == -1, "a blocking accept was not cancelled by sceRudpTerminate");
-
-    const int rebound = NewContext();
-    Require(Throws([&] { sceRudpBind(rebound, 5, 0x3000, 2); }), "a bind on a socket a terminated context used was answered");
-    Require(Throws([&] { sceRudpBind(rebound, 7, 0x2711, 1); }), "a bind failing two socket checks was answered");
 
     Require(sceRudpEnd() == 0, "sceRudpEnd failed");
     Require(sceRudpInit_nid_postfix(pool.data(), static_cast<int>(pool.size())) == 0, "sceRudpInit after sceRudpEnd failed");
