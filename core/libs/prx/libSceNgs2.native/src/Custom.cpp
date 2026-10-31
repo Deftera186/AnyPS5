@@ -311,25 +311,30 @@ void Ngs2ApplyCustomParam(Ngs2Voice& voice, const Ngs2VoiceParamHeader& param) {
         return;
     }
     if ((param.id & ~0x1fu) == SCE_NGS2_CUSTOM_VOICE_PARAM_FILTER && PS4_LIBRARY) {
+        if (rackId == SCE_NGS2_RACK_ID_SAMPLER) throw Ngs2ReturnCode{SCE_NGS2_ERROR_PS4_INVALID_VOICE_CONTROL_ID};
         if (rackId != SCE_NGS2_RACK_ID_CUSTOM_SAMPLER && rackId != SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER) {
             throw std::invalid_argument("NGS2: voice param " + Ngs2Hex(param.id) + " belongs to another rack");
         }
         const auto index = param.id & 0x1f;
-        if (index >= voice.rack->customModuleIds.size() || voice.rack->customModuleIds[index] != SCE_NGS2_CUSTOM_MODULE_ID_FILTER) APS5_INVALID_ARG_EX;
-        const auto& custom = ParamAs<Ngs2Ps4CustomVoiceFilterParam>(param);
+        const auto& modules = voice.rack->customModuleIds;
+        if (index >= modules.size()) throw Ngs2ReturnCode{SCE_NGS2_ERROR_PS4_INVALID_VOICE_CONTROL_ID};
+        if (modules[index] != SCE_NGS2_CUSTOM_MODULE_ID_FILTER) APS5_INVALID_ARG_EX;
+        if (param.size != sizeof(Ngs2Ps4CustomVoiceFilterParam)) throw Ngs2ReturnCode{SCE_NGS2_ERROR_PS4_INVALID_VOICE_CONTROL_SIZE};
+        const auto& custom = reinterpret_cast<const Ngs2Ps4CustomVoiceFilterParam&>(param);
+        if (custom.type >= 1 && custom.type <= 10 && rackId == SCE_NGS2_RACK_ID_CUSTOM_SUBMIXER) throw std::runtime_error("NGS2: the custom filter module on a custom submixer rack is not implemented");
+        if (custom.type >= 1 && custom.type <= 10 &&
+            std::any_of(modules.begin(), modules.begin() + index, [](std::uint32_t id) { return id != SCE_NGS2_CUSTOM_MODULE_ID_FILTER; })) {
+            throw std::runtime_error("NGS2: a custom filter module after another module is not implemented");
+        }
         Ngs2SamplerVoiceFilterParam filter{};
         filter.header = {sizeof(filter), 0, param.id};
         filter.index = index;
         filter.location = 1;
         filter.channel_mask = custom.channel_mask;
-        if (custom.type == 1) {
-            filter.type = 1;
-            filter.frequency = custom.fcq.frequency;
-            filter.q = custom.fcq.q;
-            filter.level = custom.fcq.level;
-        } else if (custom.type != 0) {
-            throw std::runtime_error("NGS2: custom filter type " + std::to_string(custom.type) + " is not implemented");
-        }
+        filter.type = custom.type;
+        filter.frequency = custom.fcq.frequency;
+        filter.q = custom.fcq.q;
+        filter.level = custom.fcq.level;
         Ngs2SetFilter(voice, filter);
         return;
     }

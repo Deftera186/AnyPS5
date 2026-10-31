@@ -8,9 +8,15 @@
 
 #include "Ngs2Internal.hpp"
 
+#ifdef APS5_NGS2_PS4_LIBRARY
+static constexpr bool PS4_LIBRARY = true;
+#else
+static constexpr bool PS4_LIBRARY = false;
+#endif
+
 static std::array<float, 5> FilterCoefficients(const Ngs2SamplerVoiceFilterParam& param, float rate) {
     if (param.type == 11) return {param.frequency, param.q, param.level, std::bit_cast<float>(param.reserved[0]), std::bit_cast<float>(param.reserved[1])};
-    const float fc = std::clamp(param.frequency, 0.0001f * rate, 0.499f * rate);
+    const float fc = std::clamp(param.frequency, (PS4_LIBRARY ? 0.001f : 0.0001f) * rate, 0.499f * rate);
     const float w = (fc / rate) * 6.28318548f;
     const auto s = static_cast<float>(std::sin(static_cast<double>(w)));
     const auto c = static_cast<float>(std::cos(static_cast<double>(w)));
@@ -104,7 +110,7 @@ void Ngs2ResetFilterHistory(Ngs2Voice& voice) {
 void Ngs2ApplyFilter(Ngs2Voice& voice, Ngs2Filter& filter, std::uint32_t grain) {
     if (filter.location >= 2) {
         const std::size_t target = filter.location - 2;
-        if (voice.ports[target].dest == nullptr) return;
+        if (target >= voice.ports.size() || voice.ports[target].dest == nullptr) return;
         for (std::size_t port = 0; port < voice.ports.size(); port++) {
             if (port != target && voice.ports[port].dest != nullptr) throw std::runtime_error("NGS2: a PRE_SEND sampler filter on a voice with another patched port is not implemented");
         }
