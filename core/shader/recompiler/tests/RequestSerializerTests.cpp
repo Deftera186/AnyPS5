@@ -895,6 +895,16 @@ int main() {
         upgraded[4] = 51u;
         upgraded.push_back(1u);
         Require(serializer.Serialize(replay49.request) == EncodeBase64(upgraded));
+        for (auto skipped : {bytes, upgraded}) {
+            skipped[4] = 50u;
+            bool skippedRejected = false;
+            try {
+                static_cast<void>(serializer.Deserialize(EncodeBase64(skipped)));
+            } catch (const std::runtime_error& error) {
+                skippedRejected = std::string_view(error.what()) == "unsupported recompile request serialization version";
+            }
+            Require(skippedRejected);
+        }
     }
 
     return 0;
