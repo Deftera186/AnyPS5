@@ -105,9 +105,10 @@ FontDrawupRecord* DrawupPoolAllocate(FontDrawupPoolEntry* entry, std::uint32_t s
     if (total - entry->used < slots || static_cast<std::int32_t>(total) <= 0) return nullptr;
     std::uint16_t* node = entry->scan;
     std::uint16_t* const nodes = entry->nodes;
+    if (!nodes || node < nodes || node >= nodes + total) return nullptr;
     std::uint16_t* previous = node;
     std::uint32_t run = 0;
-    std::uint32_t index = 0;
+    std::uint32_t index = static_cast<std::uint32_t>(node - nodes);
     std::uint32_t start = 0;
     std::uint16_t stopWord = 0;
     for (;;) {

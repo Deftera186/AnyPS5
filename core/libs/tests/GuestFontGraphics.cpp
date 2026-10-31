@@ -281,7 +281,7 @@ struct DrawupFixture {
     TestDrawupOwner owner{};
     TestDrawupObject object{};
     TestDrawupFrame frame{};
-    std::uint8_t descriptor[0x100]{};
+    std::uint8_t descriptor[0x200]{};
 
     DrawupFixture() {
         scePthreadMutexInit(&mutex, nullptr, "drawup");
@@ -416,6 +416,33 @@ void DrawupTextureRecords() {
         Require(f.pool.used == 8 && f.pool.entries[0].used == 8);
         Require(record2->sequence == 1 && f.frame.sequence == 2);
         RequireError(sceFontGraphicsDrawupFillTextureImageObject(frame, f.descriptor, 0x80, &out, 0.0f, 0.0f, 1.0f, 1.0f), NoRecordSpace);
+    }
+    {
+        DrawupFixture f;
+        auto* frame = reinterpret_cast<FontGraphicsFrame*>(&f.frame);
+        void* out = nullptr;
+        std::memset(f.memory, 0xa5, 2 * 0x80);
+        f.nodes[0] = (2 << 1) | 1;
+        f.nodes[1] = 1;
+        f.nodes[2] = TotalSlots << 1;
+        f.pool.entries[0].used = 2;
+        f.pool.used = 2;
+        f.pool.entries[0].scan = f.nodes + 2;
+        Require(sceFontGraphicsDrawupFillTexturePatternObject(frame, f.descriptor, 0, 0, 0, 1, 0, 0, 1, &out) == 0);
+        auto* record = static_cast<TestDrawupRecord*>(out);
+        Require(record == reinterpret_cast<TestDrawupRecord*>(f.memory + 2 * 0x80));
+        Require(record->type == 0x50 && record->mode == 0);
+        Require(record->params[0] == (0x100 | 0x1000) && record->params[1] == (4 | 0x40));
+        auto* dims = reinterpret_cast<const std::uint8_t*>(&record->params[2]);
+        Require(dims[0] == 0 && dims[1] == 0);
+        Require(AllBytes(*record, 0x2a, 0x80, 0));
+        Require(f.memory[0] == 0xa5 && f.memory[0x7f] == 0xa5 && f.memory[0x80] == 0xa5 && f.memory[0xff] == 0xa5);
+        Require(f.nodes[0] == ((2 << 1) | 1) && f.nodes[1] == 1);
+        Require(f.nodes[2] == ((3 << 1) | 1) && f.nodes[3] == (TotalSlots << 1));
+        Require(f.pool.used == 3 && f.pool.entries[0].used == 3);
+        f.pool.entries[0].scan = f.nodes + TotalSlots;
+        f.frame.error = 0;
+        RequireError(sceFontGraphicsDrawupFillTexturePatternObject(frame, f.descriptor, 0, 0, 0, 1, 0, 0, 1, &out), NoRecordSpace);
     }
 }
 
