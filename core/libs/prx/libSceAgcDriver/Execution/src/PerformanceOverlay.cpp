@@ -661,11 +661,10 @@ std::optional<OverlayMemory> ParseCommitCharge(std::string_view meminfo) {
 
 std::optional<OverlayMemory> ReadCommitCharge() {
 #ifdef _WIN32
-    PERFORMANCE_INFORMATION information{};
-    information.cb = sizeof(information);
-    if (K32GetPerformanceInfo(&information, sizeof(information)) == 0) return std::nullopt;
-    const auto page = static_cast<std::uint64_t>(information.PageSize);
-    return OverlayMemory{static_cast<std::uint64_t>(information.CommitTotal) * page, static_cast<std::uint64_t>(information.CommitLimit) * page};
+    MEMORYSTATUSEX status{};
+    status.dwLength = sizeof(status);
+    if (::GlobalMemoryStatusEx(&status) == 0) return std::nullopt;
+    return OverlayMemory{static_cast<std::uint64_t>(status.ullTotalPageFile - status.ullAvailPageFile), static_cast<std::uint64_t>(status.ullTotalPageFile)};
 #else
     std::FILE* meminfo = std::fopen("/proc/meminfo", "r");
     if (meminfo == nullptr) return std::nullopt;

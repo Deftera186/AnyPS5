@@ -741,6 +741,7 @@ void operatingSystemTests() {
     require(!commit, "a commit charge is read on macOS, which reports none");
 #else
     require(commit && commit->used != 0 && commit->budget != 0, "the system's commit charge and limit cannot be read");
+    require(commit->used <= commit->budget, "the commit charge exceeds its limit");
 #endif
     static std::uint8_t* volatile touched = nullptr;
     const auto before = AgcDriver::ReadPageFaults();
