@@ -235,6 +235,7 @@ def disassemble(code, vaddr):
     objdump = gnu_objdump()
     if objdump is None:
         raise ModuleError("GNU binutils objdump was not found as any of %s" % ", ".join(OBJDUMP_NAMES))
+    objdump = str(Path(objdump).absolute())
     with tempfile.TemporaryDirectory() as directory:
         blob = Path(directory) / "text.bin"
         blob.write_bytes(code)
