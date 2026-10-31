@@ -255,6 +255,28 @@ void CheckBorrowedReachability() {
     RequireOffsets(*first, {0, 1, 3, 4});
 }
 
+void CheckReachedMap() {
+    const Pointers pointers;
+    const Bytes text{0x90, 0x90, 0xc3, 0x90, 0xc3};
+    const std::span<const std::uint8_t> code(text);
+    std::vector<std::uint8_t> reached(text.size(), 0);
+    reached[1] = 1;
+    Require(ExtendControlFlowGraph(code, TextAddress, TextAddress, {}, pointers, false, reached) == std::vector<VirtualAddress>{TextAddress},
+            "The walk did not stop at an instruction the map already marks");
+    Require(ExtendControlFlowGraph(code, TextAddress, TextAddress + 3, {TextAddress + 4, TextAddress + 3}, pointers, false, reached) == std::vector<VirtualAddress>{TextAddress + 3, TextAddress + 4},
+            "Newly reached instructions were not returned once each in address order");
+    Require(reached == std::vector<std::uint8_t>{1, 1, 0, 1, 1}, "The map does not mark exactly the reached instructions");
+    Require(ExtendControlFlowGraph(code, TextAddress, TextAddress, {TextAddress + 3}, pointers, false, reached).empty(), "A walk of reached code returned instructions");
+    std::vector<std::uint8_t> shortMap(text.size() - 1, 0);
+    bool threw = false;
+    try {
+        ExtendControlFlowGraph(code, TextAddress, TextAddress, {}, pointers, false, shortMap);
+    } catch (const RelinkerException&) {
+        threw = true;
+    }
+    Require(threw, "A map shorter than the text was accepted");
+}
+
 void CheckAddressOverflow() {
     const Pointers pointers;
     const Bytes text{0x90, 0xc3};
@@ -652,6 +674,7 @@ int main() {
         CheckSpeculativeRoots();
         CheckTrailingZeroRoots();
         CheckBorrowedReachability();
+        CheckReachedMap();
         CheckAddressOverflow();
         CheckHighVirtualAddress();
         CheckRelativeJumpTables();
