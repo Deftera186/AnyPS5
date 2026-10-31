@@ -470,6 +470,8 @@ def main(arguments=None):
     options = parser.parse_args(arguments)
     if options.summary and not Path(options.summary).is_file():
         parser.error(f"summary file not found: {options.summary}")
+    if options.summary and options.trace.endswith(".jsonl"):
+        parser.error("--summary requires an event trace, not interval summaries")
     if options.thread and options.trace.endswith(".jsonl"):
         parser.error("--thread requires an event trace, not interval summaries")
     if options.trace.endswith(".jsonl"):
