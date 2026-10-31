@@ -2249,6 +2249,45 @@ static void RenderAfterStaticTeardown() {
     Require(sceNgs2SystemDestroy(exitSystem, nullptr) == SCE_NGS2_OK);
 }
 
+static void Ps4SamplerFilterRun(std::uint32_t mask, std::uint32_t type) {
+    const auto system = CreateSystem();
+    const auto master = Mastering(system, 1);
+    const auto voice = Voice(CreateRack(system, SCE_NGS2_RACK_ID_SAMPLER));
+    Control(voice, SCE_NGS2_SAMPLER_VOICE_PARAM_SETUP, Ngs2SamplerVoiceSetupParam{{}, {SCE_NGS2_WAVEFORM_TYPE_PCM_I16L, 1, 48000, 0, 0, 0}});
+    const std::vector<std::int16_t> pcm(Grain, 16384);
+    const Ngs2WaveformBlock block{0, pcm.size() * sizeof(std::int16_t), 0, 0, Grain, 0, 0};
+    Control(voice, SCE_NGS2_SAMPLER_VOICE_PARAM_ADD_WAVEFORM_BLOCKS, Ngs2SamplerVoiceWaveformBlocksParam{{}, pcm.data(), 0, 1, &block});
+    alignas(8) std::uint8_t raw[56] = {};
+    const Ngs2VoiceParamHeader header{sizeof(raw), 0, SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER};
+    const std::uint32_t index = 0, location = 1;
+    const std::uint64_t channelMask = mask;
+    const float frequency = 10000.0f, q = 0.707f, level = 1.0f;
+    std::memcpy(raw, &header, sizeof(header));
+    std::memcpy(raw + 0x8, &index, sizeof(index));
+    std::memcpy(raw + 0xC, &location, sizeof(location));
+    std::memcpy(raw + 0x10, &type, sizeof(type));
+    std::memcpy(raw + 0x18, &channelMask, sizeof(channelMask));
+    std::memcpy(raw + 0x20, &frequency, sizeof(frequency));
+    std::memcpy(raw + 0x24, &q, sizeof(q));
+    std::memcpy(raw + 0x28, &level, sizeof(level));
+    Require(sceNgs2VoiceControl(voice, reinterpret_cast<const Ngs2VoiceParamHeader*>(raw)) == SCE_NGS2_OK);
+    Patch(voice, master);
+    Event(voice, SCE_NGS2_VOICE_EVENT_PLAY);
+    std::vector<float> out(Grain, -1.0f);
+    const Ngs2RenderBufferInfo renderInfo{out.data(), out.size() * sizeof(float), SCE_NGS2_WAVEFORM_TYPE_PCM_F32L, 1};
+    Require(sceNgs2SystemRender(system, &renderInfo, 1) == SCE_NGS2_OK);
+    Require(out[0] == 0.0f && out[1] == 0.0f && out[2] == 0.0f);
+    if (mask == 0 && type == 1) {
+        const double w = 2.0 * std::numbers::pi * frequency / 48000.0;
+        const double alpha = std::sin(w) / (2.0 * q);
+        const double b0 = (1.0 - std::cos(w)) / 2.0 / (1.0 + alpha);
+        Require(std::abs(out[3] - 0.5 * b0) <= 1e-4 * 0.5 * b0 && out[Grain - 1] > out[3]);
+    } else {
+        Require(out[3] == 0.5f && out[Grain - 1] == 0.5f);
+    }
+    Require(sceNgs2SystemDestroy(system, nullptr) == SCE_NGS2_OK);
+}
+
 static void Ps4CustomFilterRun(std::uint32_t mask) {
     const auto system = CreateSystem();
     const auto master = Mastering(system, 1);
@@ -2299,6 +2338,9 @@ int main() {
     if (Ps4Library) {
         Ps4CustomFilterRun(0);
         Ps4CustomFilterRun(1);
+        Ps4SamplerFilterRun(0, 1);
+        Ps4SamplerFilterRun(1, 1);
+        Ps4SamplerFilterRun(0, 0);
     }
     TestPcmBlockEnd();
     TestPatchToRackHandle();

@@ -563,6 +563,22 @@ static_assert(offsetof(Ngs2SamplerVoiceFilterParam, frequency) == 0x1C);
 static_assert(offsetof(Ngs2SamplerVoiceFilterParam, q) == 0x20);
 static_assert(offsetof(Ngs2SamplerVoiceFilterParam, level) == 0x24);
 
+struct Ngs2Ps4SamplerVoiceFilterParam {
+    Ngs2VoiceParamHeader header;
+    std::uint32_t index;
+    std::uint32_t location;
+    std::uint32_t type;
+    std::uint64_t channel_mask;
+    float frequency;
+    float q;
+    float level;
+    std::uint32_t reserved[3];
+};
+static_assert(sizeof(Ngs2Ps4SamplerVoiceFilterParam) == 56);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, type) == 0x10);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, channel_mask) == 0x18);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, frequency) == 0x20);
+
 struct Ngs2SubmixerVoiceSetupParam {
     Ngs2VoiceParamHeader header;
     std::uint32_t num_io_channels;

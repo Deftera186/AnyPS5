@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <mutex>
 #include <numbers>
 #include <stdexcept>
@@ -939,7 +940,27 @@ static void ApplySamplerParam(Ngs2Voice& voice, const Ngs2VoiceParamHeader& para
             voice.pitch = std::clamp(ratio, 0.0f, 4.0f);
             break;
         }
-        case SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER: Ngs2SetFilter(voice, reinterpret_cast<const Ngs2SamplerVoiceFilterParam&>(param)); break;
+        case SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER:
+            if (PS4_LIBRARY) {
+                const auto& ps4 = ParamAs<Ngs2Ps4SamplerVoiceFilterParam>(param);
+                if (ps4.type != 0 && (ps4.location != 1 || ps4.type != 1)) {
+                    throw std::runtime_error("NGS2: sampler filter location " + std::to_string(ps4.location) + " type " + std::to_string(ps4.type) + " is not implemented");
+                }
+                Ngs2SamplerVoiceFilterParam filter{};
+                filter.header = {sizeof(filter), 0, param.id};
+                filter.index = ps4.index;
+                filter.location = ps4.location;
+                filter.channel_mask = ps4.channel_mask;
+                filter.type = ps4.type;
+                filter.frequency = ps4.frequency;
+                filter.q = ps4.q;
+                filter.level = ps4.level;
+                std::copy(std::begin(ps4.reserved), std::end(ps4.reserved), std::begin(filter.reserved));
+                Ngs2SetFilter(voice, filter);
+            } else {
+                Ngs2SetFilter(voice, reinterpret_cast<const Ngs2SamplerVoiceFilterParam&>(param));
+            }
+            break;
         case SCE_NGS2_SAMPLER_VOICE_PARAM_PEAK_METER: SetPeakMeter(voice, ParamAs<Ngs2VoicePeakMeterParam>(param).detect_type); break;
         default: throw std::runtime_error("NGS2: sampler voice param " + Ngs2Hex(param.id) + " is not implemented");
     }
