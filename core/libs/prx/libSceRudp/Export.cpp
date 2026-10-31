@@ -9,6 +9,8 @@
 #include <set>
 #include <mutex>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 #include "SceTypes.hpp"
 #include "prx/libc/include/General.hpp"
 #include "prx/libkernel/Time/include/TimedWait.hpp"
@@ -38,7 +40,7 @@ constexpr int RUDP_ERROR_IN_PROGRESS = static_cast<int>(0x80770021u);
 constexpr int RUDP_ERROR_NO_EVENT_HANDLER = static_cast<int>(0x80770022u);
 constexpr uint8_t RUDP_MUXMODE_P2P = 1;
 constexpr uint8_t RUDP_MUXMODE_SERVER = 2;
-constexpr uint16_t RUDP_FIRST_AUTO_VPORT = 0x2711;
+constexpr uint16_t RUDP_AUTO_VPORT_BASE = 0x2710;
 constexpr int RUDP_MAX_BACKLOG = 0x80;
 
 constexpr int RUDP_POLL_OP_ADD = 1;
@@ -107,11 +109,12 @@ GuestRudpEventHandler g_handler = nullptr;
 void* g_handler_arg = nullptr;
 struct RudpSocket {
     uint8_t muxMode = 0;
+    int contexts = 0;
     std::set<uint16_t> vports;
-    uint16_t nextVport = RUDP_FIRST_AUTO_VPORT;
-    bool hadTerminatedContext = false;
+    uint16_t lastVport = RUDP_AUTO_VPORT_BASE;
 };
 std::map<int, RudpSocket> g_sockets;
+std::vector<std::pair<int, uint16_t>> g_held_bindings;
 TimedWait::Condition g_accept_changed;
 
 struct RudpPoll {
@@ -156,6 +159,14 @@ bool valid_ctx(int ctx) {
 void remove_ctx_from_polls(int ctx) {
     for (auto& [id, poll] : g_polls) {
         poll.entries.erase(ctx);
+    }
+}
+
+void release_binding(int socketId, uint16_t vport) {
+    const auto socket = g_sockets.find(socketId);
+    socket->second.vports.erase(vport);
+    if (--socket->second.contexts == 0) {
+        g_sockets.erase(socket);
     }
 }
 }  // namespace
@@ -211,6 +222,7 @@ int APS5_VABI sceRudpEnd(void) {
     g_handler = nullptr;
     g_handler_arg = nullptr;
     g_sockets.clear();
+    g_held_bindings.clear();
     g_polls_changed.NotifyAll();
     g_accept_changed.NotifyAll();
     return 0;
@@ -225,10 +237,10 @@ int APS5_VABI sceRudpTerminate(int ctx_id) {
     if (context == g_ctx.end()) {
         return RUDP_ERROR_INVALID_CONTEXT_ID;
     }
-    if (context->second.bound) {
-        auto& socket = g_sockets.at(context->second.socketId);
-        socket.vports.erase(context->second.vport);
-        socket.hadTerminatedContext = true;
+    if (context->second.listening) {
+        g_held_bindings.emplace_back(context->second.socketId, context->second.vport);
+    } else if (context->second.bound) {
+        release_binding(context->second.socketId, context->second.vport);
     }
     g_ctx.erase(context);
     remove_ctx_from_polls(ctx_id);
@@ -295,36 +307,38 @@ int APS5_VABI sceRudpBind(int ctxId, int socketId, uint16_t vport, uint8_t muxMo
         return RUDP_ERROR_INVALID_CONTEXT_ID;
     }
     auto& context = g_ctx.at(ctxId);
+    if (context.listening) {
+        return RUDP_ERROR_NOT_ACCEPTABLE;
+    }
     if (context.bound) {
         return RUDP_ERROR_ALREADY_BOUND;
     }
-    auto& socket = g_sockets[socketId];
-    if (socket.hadTerminatedContext) {
-        throw std::runtime_error("sceRudpBind: a socket a terminated context was bound to");
-    }
-    const bool otherMuxMode = !socket.vports.empty() && socket.muxMode != muxMode;
-    const bool missingVport = vport == 0 && muxMode == RUDP_MUXMODE_P2P;
-    const bool vportInUse = vport != 0 && socket.vports.count(vport) != 0;
-    if (otherMuxMode + missingVport + vportInUse > 1) {
-        throw std::runtime_error("sceRudpBind: a bind failing more than one socket check");
-    }
-    if (otherMuxMode) {
+    const auto existing = g_sockets.find(socketId);
+    if (existing != g_sockets.end() && existing->second.muxMode != muxMode) {
         return RUDP_ERROR_INVALID_MUXMODE;
     }
-    if (missingVport) {
+    if (muxMode == RUDP_MUXMODE_P2P && vport == 0) {
         return RUDP_ERROR_INVALID_VPORT;
     }
-    if (vportInUse) {
+    if (muxMode == RUDP_MUXMODE_SERVER && vport != 0 && existing != g_sockets.end() && existing->second.vports.count(vport) != 0) {
         return RUDP_ERROR_VPORT_IN_USE;
     }
-    if (vport == 0) {
-        if (socket.vports.count(socket.nextVport) != 0) {
-            throw std::runtime_error("sceRudpBind: the next automatic vport is already in use");
+    auto& socket = g_sockets[socketId];
+    if (muxMode == RUDP_MUXMODE_SERVER) {
+        if (vport == 0) {
+            vport = socket.lastVport;
+            do {
+                if (vport == std::numeric_limits<uint16_t>::max()) {
+                    throw std::runtime_error("sceRudpBind: an automatic vport past 0xFFFF");
+                }
+                ++vport;
+            } while (socket.vports.count(vport) != 0);
+            socket.lastVport = vport;
         }
-        vport = socket.nextVport++;
+        socket.vports.insert(vport);
     }
     socket.muxMode = muxMode;
-    socket.vports.insert(vport);
+    ++socket.contexts;
     context.bound = true;
     context.socketId = socketId;
     context.vport = vport;
@@ -482,7 +496,14 @@ int APS5_VABI sceRudpNetFlush(void) {
 
 int APS5_VABI sceRudpProcessEvents(std::uint64_t timeout) {
     std::lock_guard<std::mutex> lk(g_mutex);
-    return g_inited ? 0 : RUDP_ERROR_NOT_INITIALIZED;
+    if (!g_inited) {
+        return RUDP_ERROR_NOT_INITIALIZED;
+    }
+    for (const auto& [socketId, vport] : g_held_bindings) {
+        release_binding(socketId, vport);
+    }
+    g_held_bindings.clear();
+    return 0;
 }
 
 int APS5_VABI sceRudpNetReceived(int socketId, const void* data, std::size_t dataSize, const void* sourceAddress, std::uint32_t sourceAddressSize) {

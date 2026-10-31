@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <initializer_list>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
@@ -60,6 +61,58 @@ int NewContext() {
     return context;
 }
 
+int Bound(int socket, std::uint16_t vport, std::uint8_t muxMode) {
+    const int context = NewContext();
+    Require(sceRudpBind(context, socket, vport, muxMode) == 0, "a bind expected to succeed failed");
+    return context;
+}
+
+int BindResult(int socket, std::uint16_t vport, std::uint8_t muxMode) {
+    const int context = NewContext();
+    const int result = sceRudpBind(context, socket, vport, muxMode);
+    Require(sceRudpTerminate(context) == 0, "terminating a probe context failed");
+    return result;
+}
+
+void Terminate(std::initializer_list<int> contexts) {
+    for (const int context : contexts) {
+        Require(sceRudpTerminate(context) == 0, "sceRudpTerminate failed");
+    }
+}
+
+void CheckSocketRecords(ListenFn listen) {
+    Require(BindResult(12, 0, 1) == InvalidVport && BindResult(12, 0, 2) == 0, "a failed bind left a record on its socket");
+
+    const int first = Bound(10, 0, 2);
+    const int second = Bound(10, 0, 2);
+    Require(BindResult(10, 0x2711, 2) == VportInUse && BindResult(10, 0x2712, 2) == VportInUse, "vport 0 did not hand out 0x2711 and then 0x2712");
+    Terminate({first});
+    const int reused = Bound(10, 0x2711, 2);
+    const int third = Bound(10, 0, 2);
+    Require(BindResult(10, 0x2713, 2) == VportInUse, "vport 0 did not go on to 0x2713 while the socket kept a context");
+    const int manual = Bound(10, 0x2714, 2);
+    const int skipping = Bound(10, 0, 2);
+    Require(BindResult(10, 0x2715, 2) == VportInUse, "vport 0 did not skip a vport bound by hand");
+    Terminate({second, reused, third, manual, skipping});
+
+    const int p2p = Bound(10, 1000, 1);
+    const int sameVport = Bound(10, 1000, 1);
+    Require(BindResult(10, 0, 2) == InvalidMuxMode, "mux mode 2 was taken on a socket with mux mode 1 contexts");
+    Terminate({p2p, sameVport});
+    const int restarted = Bound(10, 0, 2);
+    Require(BindResult(10, 0x2711, 2) == VportInUse, "vport 0 did not start again at 0x2711 after the socket's last context left");
+    Terminate({restarted});
+
+    const int listener = Bound(11, 0, 2);
+    Require(listen(listener, 1) == 0, "listen failed");
+    Terminate({listener});
+    Require(sceRudpTerminate(listener) == InvalidContext, "a terminated listening context was still known");
+    Require(BindResult(11, 0x2711, 2) == VportInUse, "a listening context's vport was freed before sceRudpProcessEvents");
+    Require(BindResult(11, 1000, 1) == InvalidMuxMode, "a listening context's socket was freed before sceRudpProcessEvents");
+    Require(sceRudpProcessEvents(0) == 0, "sceRudpProcessEvents failed");
+    Require(BindResult(11, 1000, 1) == 0 && BindResult(11, 0x2711, 2) == 0, "sceRudpProcessEvents did not free a terminated listening context's socket");
+}
+
 }
 
 int main() {
@@ -81,12 +134,15 @@ int main() {
     Require(sceRudpBind(12345, 5, 0, 2) == InvalidContext, "an unknown context was bound");
     Require(sceRudpBind(server, 5, 0, 2) == 0, "binding with mux mode 2 and vport 0 failed");
     Require(sceRudpBind(server, 5, 0x3000, 2) == AlreadyBound, "a second bind was taken");
+    Require(sceRudpBind(server, 5, 0x2711, 2) == AlreadyBound && sceRudpBind(server, 5, 0x3000, 1) == AlreadyBound && sceRudpBind(server, 6, 0, 1) == AlreadyBound, "a bound context reached the socket checks");
+    Require(sceRudpBind(server, 5, 0, 3) == InvalidMuxMode, "a bound context took mux mode 3");
 
     const int second = NewContext();
     Require(sceRudpBind(second, 5, 0x2711, 2) == VportInUse, "the first automatic vport was not 0x2711");
     Require(sceRudpBind(second, 5, 0x3000, 1) == InvalidMuxMode, "another mux mode on the same socket was taken");
     Require(sceRudpBind(second, 5, 0, 2) == 0, "a second automatic vport failed");
     const int third = NewContext();
+    Require(sceRudpBind(third, 5, 0, 1) == InvalidMuxMode, "mux mode 1 with vport 0 on a mux mode 2 socket did not fail the mux mode check");
     Require(sceRudpBind(third, 5, 0x2712, 2) == VportInUse, "the second automatic vport was not 0x2712");
     Require(sceRudpBind(third, 6, 0, 1) == InvalidVport, "vport 0 with mux mode 1 was taken");
     Require(sceRudpBind(third, 7, 0, 2) == 0, "an automatic vport on another socket failed");
@@ -109,6 +165,7 @@ int main() {
 
     Require(listen(server, 0x1000) == 0, "listen failed on a bound mux mode 2 context");
     Require(listen(server, 1) == InProgress, "a second listen was taken");
+    Require(sceRudpBind(server, 5, 0x3000, 2) == NotAcceptable, "a listening context did not answer NOT_ACCEPTABLE to a bind");
     Require(accept(server, Handler, nullptr, &accepted, nullptr, nullptr, nullptr) == WouldBlock && accepted == -1, "a non-blocking accept with nothing pending did not return WOULDBLOCK");
 
     const std::uint32_t blocking = 0;
@@ -119,6 +176,7 @@ int main() {
     Require(sceRudpTerminate(server) == 0, "terminating the listening context failed");
     waiter.join();
     Require(blockedResult == Cancelled && accepted == -1, "a blocking accept was not cancelled by sceRudpTerminate");
+    CheckSocketRecords(listen);
 
     Require(sceRudpEnd() == 0, "sceRudpEnd failed");
     Require(sceRudpInit_nid_postfix(pool.data(), static_cast<int>(pool.size())) == 0, "sceRudpInit after sceRudpEnd failed");
