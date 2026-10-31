@@ -2120,7 +2120,12 @@ int APS5_VABI poll_nid_postfix(GuestPollDescriptor* descriptors, std::uint32_t c
         if (getrlimit_nid_postfix(8, &limit) == 0 && static_cast<std::int64_t>(count) > limit.rlim_max) return Fail(22);
     }
     if (count && !descriptors) return Fail(14);
-    std::vector<GuestPollDescriptor> local(count);
+    std::vector<GuestPollDescriptor> local;
+    try {
+        local.resize(count);
+    } catch (const std::bad_alloc&) {
+        return Fail(12);
+    }
     const auto bytes = local.size() * sizeof(GuestPollDescriptor);
     if (count && !GuestCopyIn_nid_no_patch(local.data(), descriptors, bytes)) return Fail(14);
     const int result = PollDescriptors(local.data(), count, timeout);
