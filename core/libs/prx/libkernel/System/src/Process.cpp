@@ -673,7 +673,10 @@ int APS5_VABI sceKernelGetAppInfo(int pid, void* info) {
     }
     const std::uint32_t marker = 0xffffffffu;
     std::memcpy(record + MarkerOffset, &marker, sizeof(marker));
-    if (!WriteGuest(info, record, sizeof(record))) return SCE_KERNEL_ERROR_EFAULT;
+    const int savedErrno = errno;
+    const bool written = WriteGuest(info, record, sizeof(record));
+    errno = savedErrno;
+    if (!written) return SCE_KERNEL_ERROR_EFAULT;
     return 0;
 }
 
