@@ -361,7 +361,7 @@ The named entries below use provider-specific NID aliases to avoid interposing h
 - [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_LPlsw`, `_LPmsw`, `_LPow`, `_LQuad`, `_LQuadph`, `_LRint`, `_LSincos`, `_LTan`
 - [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_LTgamma`, `_LXp_addh`, `_LXp_addx`, `_LXp_getw`, `_LXp_invx`, `_LXp_ldexpx`, `_LXp_movx`, `_LXp_mulh`, `_LXp_mulx`, `_LXp_setn`
 - [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_LXp_setw`, `_LXp_sqrtx`, `_LXp_subx`, `_Ldtob`, `_Litob`, `_Lock_spin_lock`, `_Locsum`, `_Locterm`, `_Locvar`, `_Logpoly`
-- [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_Makeloc`, `_Makestab`, `_Makewct`, `_Mbtowc`, `_Mtxdst`, `_Mtxinit`, `_Mtxlock`, `_Mtxunlock`, `_Nnl`
+- [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_Makeloc`, `_Makestab`, `_Makewct`, `_Mbtowc`, `_Nnl`
 - [Additional imported names](../../../core/libs/prx/libSceLibcInternal/Export.cpp) (libSceLibcInternal) - `_Plsw`, `_Pmsw`, `_Pow`, `_Printf`, `_Putfld`, `_Putstr`, `_Puttxt`, `_Quad`, `_Quadph`, `_Readloc`
 
 ### Additional PS5 3.20 imports (round 6)
