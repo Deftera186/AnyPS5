@@ -3,7 +3,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <mutex>
 #include <numbers>
 #include <stdexcept>
@@ -952,10 +951,11 @@ static void ApplySamplerParam(Ngs2Voice& voice, const Ngs2VoiceParamHeader& para
                 filter.location = ps4.location;
                 filter.channel_mask = ps4.channel_mask;
                 filter.type = ps4.type;
-                filter.frequency = ps4.frequency;
-                filter.q = ps4.q;
-                filter.level = ps4.level;
-                std::copy(std::begin(ps4.reserved), std::end(ps4.reserved), std::begin(filter.reserved));
+                filter.frequency = ps4.fcq.frequency;
+                filter.q = ps4.fcq.q;
+                filter.level = ps4.fcq.level;
+                filter.reserved[0] = ps4.fcq.reserved;
+                filter.reserved[1] = ps4.fcq.reserved2;
                 Ngs2SetFilter(voice, filter);
             } else {
                 Ngs2SetFilter(voice, reinterpret_cast<const Ngs2SamplerVoiceFilterParam&>(param));

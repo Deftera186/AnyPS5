@@ -568,16 +568,22 @@ struct Ngs2Ps4SamplerVoiceFilterParam {
     std::uint32_t index;
     std::uint32_t location;
     std::uint32_t type;
-    std::uint64_t channel_mask;
-    float frequency;
-    float q;
-    float level;
-    std::uint32_t reserved[3];
+    std::uint32_t channel_mask;
+    struct {
+        float frequency;
+        float q;
+        float level;
+        std::uint32_t reserved;
+        std::uint32_t reserved2;
+    } fcq;
+    std::uint32_t reserved3;
 };
-static_assert(sizeof(Ngs2Ps4SamplerVoiceFilterParam) == 56);
+static_assert(sizeof(Ngs2Ps4SamplerVoiceFilterParam) == 0x30);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, index) == 0x8);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, location) == 0xC);
 static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, type) == 0x10);
-static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, channel_mask) == 0x18);
-static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, frequency) == 0x20);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, channel_mask) == 0x14);
+static_assert(offsetof(Ngs2Ps4SamplerVoiceFilterParam, fcq) == 0x18);
 
 struct Ngs2SubmixerVoiceSetupParam {
     Ngs2VoiceParamHeader header;
