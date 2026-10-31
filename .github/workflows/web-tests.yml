@@ -31,6 +31,8 @@ jobs:
           echo "ANYPS5_TEST_ZIP_PATH=$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.argv[1]).resolve().as_uri())' "$RUNNER_TEMP/zip.mjs")" >> "$GITHUB_ENV"
       - name: Test archive root selection
         run: node demo/web/tests/archive-root.test.mjs demo/web
+      - name: Test archive Windows paths
+        run: node demo/web/tests/archive-windows.test.mjs demo/web
       - name: Check browser module syntax
         run: |
           node --check demo/web/app.mjs
