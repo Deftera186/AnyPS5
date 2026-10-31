@@ -72,7 +72,7 @@ void CheckGapAndReachableRoutine(Domain::FileByteOffset origin) {
     auto code = Fixture(false);
     code[DataOffset] = 0x0f;
     code[DataOffset + 1] = 0x05;
-    Require(scanner->ScanCodeSectionForSyscalls(code, origin, code.size(), {}, {{0, DataOffset}}).empty(), "Syscall byte pattern in data gap was falsely rejected");
+    CheckForbiddenInstruction(code, origin, DataOffset, {}, {{0, DataOffset}});
     auto decodableData = Fixture(false);
     decodableData[DataOffset] = 0x00;
     decodableData[DataOffset + 1] = 0x00;
@@ -94,6 +94,20 @@ void CheckNoUnwindIndirectJumpSyscall(Domain::FileByteOffset origin) {
         0xC3,
     };
     CheckForbiddenInstruction(code, origin, 11, {}, {});
+}
+
+void CheckIndirectOnlyDynamicSyscall(Domain::FileByteOffset origin) {
+    const Bytes code = {
+        0xC3,
+        0x0F, 0x78,
+        0x90, 0x90,
+        0x48, 0x8D, 0x05, 0x02, 0x00, 0x00, 0x00,
+        0xFF, 0xE0,
+        0x8B, 0x07,
+        0x0F, 0x05,
+        0xC3,
+    };
+    CheckForbiddenInstruction(code, origin, 16, {}, {{0, 1}});
 }
 
 void CheckDirectCallAfterIndirectJump(Domain::FileByteOffset origin) {
@@ -120,8 +134,6 @@ void CheckUnwindGapAndBoundedCallee(Domain::FileByteOffset origin) {
     const Bytes gap = {
         0xC3,
         0x0F, 0x78, 0x11,
-        0x0F, 0x05,
-        0x8B, 0x07, 0x0F, 0x05, 0xC3,
         0xC3,
     };
     const Bytes body = {
@@ -136,11 +148,18 @@ void CheckUnwindGapAndBoundedCallee(Domain::FileByteOffset origin) {
         0x8B, 0x07, 0x0F, 0x05, 0xC3,
         0x0F, 0x78, 0x00,
     };
+    const Bytes tail = {
+        0xE8, 0x01, 0x00, 0x00, 0x00,
+        0xC3,
+        0xFF, 0xE0,
+        0x0F, 0x78, 0x00,
+    };
     TestProgress progress;
     const auto scanner = Relinker::MakeSyscallScanner(progress);
-    Require(scanner->ScanCodeSectionForSyscalls(gap, origin, gap.size(), {}, {{0, 1}, {11, 12}}).empty(), "Dynamic syscall or embedded data in an unwind gap was rejected");
+    Require(scanner->ScanCodeSectionForSyscalls(gap, origin, gap.size(), {}, {{0, 1}, {4, 5}}).empty(), "Embedded data in an unwind gap was rejected");
     CheckForbiddenInstruction(body, origin, 6, {}, {{0, 1}, {4, 9}});
-    Require(scanner->ScanCodeSectionForSyscalls(callee, origin, callee.size(), {}, {{0, 6}}).empty(), "Bytes after an outside indirect jump were scanned as a routine");
+    CheckForbiddenInstruction(callee, origin, 10, {}, {{0, 6}});
+    Require(scanner->ScanCodeSectionForSyscalls(tail, origin, tail.size(), {}, {{0, 6}}).empty(), "Embedded data after an outside indirect jump was rejected");
 }
 
 }
@@ -151,6 +170,7 @@ int main() {
             CheckUndecodableData(origin);
             CheckGapAndReachableRoutine(origin);
             CheckNoUnwindIndirectJumpSyscall(origin);
+            CheckIndirectOnlyDynamicSyscall(origin);
             CheckDirectCallAfterIndirectJump(origin);
             CheckConditionalBranchAcrossGap(origin);
             CheckUnwindGapAndBoundedCallee(origin);

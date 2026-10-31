@@ -419,8 +419,6 @@ std::vector<std::size_t> SyscallScanner::ScanCodeSectionForSyscalls(const std::v
     RecentInstructions recent;
     std::vector<std::size_t> trapped;
     const auto insideFunction = [&](const std::size_t offset) { return ContainsOffset(functions, offset); };
-    std::size_t skipped = 0;
-    std::optional<FileByteOffset> firstSkipped;
     scanner->VisitCodeSection(codeSection, codeSectionOffset, codeSectionSize, [&](const Codegen::InstructionMatch& match) {
         recent.Push(match);
         if (match.Offset < codeSectionOffset) throw RelinkerException("Instruction match precedes code section offset", match.Offset);
@@ -447,15 +445,8 @@ std::vector<std::size_t> SyscallScanner::ScanCodeSectionForSyscalls(const std::v
         std::optional<std::uint64_t> number;
         if (kind == ForbiddenInstruction::Invocation)
             number = ConstantSyscallNumber(codeSection, codeSectionOffset, recent);
-        if (!unwindRanges.empty() && !number && !insideFunction(start)) {
-            if (kind == ForbiddenInstruction::Invocation)
-                number = ConstantSyscallNumberInBytes(codeSection, opcode);
-            if (!number) {
-                ++skipped;
-                if (!firstSkipped) firstSkipped = match.Offset;
-                return;
-            }
-        }
+        if (!number && kind == ForbiddenInstruction::Invocation && !unwindRanges.empty() && !insideFunction(start))
+            number = ConstantSyscallNumberInBytes(codeSection, opcode);
 
         std::ostringstream msg;
         msg << "Forbidden syscall instruction at code offset 0x" << std::hex << match.Offset;
@@ -467,11 +458,6 @@ std::vector<std::size_t> SyscallScanner::ScanCodeSectionForSyscalls(const std::v
         error.InputPath = source;
         throw error;
     });
-    if (skipped != 0) {
-        std::ostringstream message;
-        message << "Skipped " << std::dec << skipped << " syscall byte pattern(s) without a syscall number outside the unwind functions, the first at code offset 0x" << std::hex << *firstSkipped << '\n';
-        progress.Message(message.str());
-    }
     progress.Report({Domain::ProgressStage::Syscalls, source, limit, limit});
     return trapped;
 }
