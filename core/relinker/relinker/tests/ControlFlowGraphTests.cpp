@@ -9,6 +9,28 @@
 #include <string>
 #include <limits>
 #include <chrono>
+#include <cstdlib>
+#include <new>
+
+namespace {
+
+bool failAllocations = false;
+
+}
+
+void* operator new(std::size_t size) {
+    if (failAllocations) throw std::bad_alloc();
+    if (void* memory = std::malloc(size == 0 ? 1 : size)) return memory;
+    throw std::bad_alloc();
+}
+
+void operator delete(void* memory) noexcept {
+    std::free(memory);
+}
+
+void operator delete(void* memory, std::size_t) noexcept {
+    std::free(memory);
+}
 
 namespace {
 
@@ -275,6 +297,23 @@ void CheckReachedMap() {
         threw = true;
     }
     Require(threw, "A map shorter than the text was accepted");
+}
+
+void CheckAllocationFailureDuringWalk() {
+    const Pointers pointers;
+    Bytes text(8192, 0x90);
+    text.push_back(0xc3);
+    std::unordered_set<VirtualAddress> reachable;
+    bool threw = false;
+    try {
+        BuildControlFlowGraph(std::span<const std::uint8_t>(text), TextAddress, TextAddress, {}, pointers, false, reachable, [](std::uint64_t count) {
+            if (count >= 4096) failAllocations = true;
+        });
+    } catch (const std::bad_alloc&) {
+        threw = true;
+    }
+    failAllocations = false;
+    Require(threw, "An allocation failure during the walk did not reach the caller as std::bad_alloc");
 }
 
 void CheckAddressOverflow() {
@@ -675,6 +714,7 @@ int main() {
         CheckTrailingZeroRoots();
         CheckBorrowedReachability();
         CheckReachedMap();
+        CheckAllocationFailureDuringWalk();
         CheckAddressOverflow();
         CheckHighVirtualAddress();
         CheckRelativeJumpTables();

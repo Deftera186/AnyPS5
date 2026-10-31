@@ -192,12 +192,13 @@ void buildGraph(std::span<const std::uint8_t> text, VirtualAddress textVaddr, Vi
     for (const VirtualAddress va : reachable)
         if (va >= textVaddr && va - textVaddr < text.size()) state[static_cast<std::size_t>(va - textVaddr)] = Reached;
     std::vector<VirtualAddress> added;
-    struct Publish {
-        std::unordered_set<VirtualAddress>& reachable;
-        std::vector<VirtualAddress>& added;
-        ~Publish() { reachable.insert(added.begin(), added.end()); }
-    } publish{reachable, added};
-    walkGraph(text, textVaddr, entryVaddr, extraEntries, relativeRelocations, data, followCodeAddresses, state, &reachable, reachable.size(), added, progress, isData);
+    try {
+        walkGraph(text, textVaddr, entryVaddr, extraEntries, relativeRelocations, data, followCodeAddresses, state, &reachable, reachable.size(), added, progress, isData);
+    } catch (...) {
+        reachable.insert(added.begin(), added.end());
+        throw;
+    }
+    reachable.insert(added.begin(), added.end());
 }
 
 }
