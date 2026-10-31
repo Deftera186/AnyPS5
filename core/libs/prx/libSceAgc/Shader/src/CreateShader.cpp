@@ -9,10 +9,6 @@
 #include "prx/libSceAgc/Shader/include/ShaderUtils.hpp"
 #include "prx/libSceAgc/Shader/include/ShaderConstants.hpp"
 
-#ifndef APS5_AGC_CREATE_LOG
-#define APS5_AGC_CREATE_LOG 1
-#endif
-
 extern "C" {
 
 int APS5_VABI sceAgcCreateShader(Shader** dst, void* header, const volatile void* code) {
