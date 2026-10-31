@@ -29,10 +29,6 @@ static constexpr bool PS4_LIBRARY = true;
 static constexpr bool PS4_LIBRARY = false;
 #endif
 
-struct Ngs2ReturnCode {
-    int code;
-};
-
 static void SendEvent(Ngs2Voice& voice, std::uint32_t eventId) {
     if (eventId == SCE_NGS2_VOICE_EVENT_PLAY && voice.channels == 0) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_VOICE_ACCESS};
     voice.SetEvent(eventId);
@@ -129,8 +125,16 @@ void Ngs2Voice::SetEvent(std::uint32_t eventId) {
     }
     switch (eventId) {
         case SCE_NGS2_VOICE_EVENT_PLAY:
+            if (IsSampler() && (state == Ngs2PlayState::Playing || state == Ngs2PlayState::Paused) &&
+                std::any_of(filters.begin(), filters.end(), [](const Ngs2Filter& filter) { return filter.enabled; })) {
+                state = Ngs2PlayState::Stopped;
+                stateFlags = SCE_NGS2_VOICE_STATE_FLAG_INUSE;
+            }
             if (state == Ngs2PlayState::Empty || state == Ngs2PlayState::Stopped) {
-                if (IsSampler()) Ngs2ReplaySampler(*this);
+                if (IsSampler()) {
+                    Ngs2ReplaySampler(*this);
+                    Ngs2ResetFilterHistory(*this);
+                }
                 if (Ngs2HasPitchShift(*this) || IsSampler() || IsMixer()) {
                     Ngs2RestartPitchShift(*this);
                     outputTransition = Ngs2VoiceTransition::None;
@@ -866,40 +870,24 @@ static void AddWaveformBlocks(Ngs2Voice& voice, const Ngs2SamplerVoiceWaveformBl
 }
 
 void Ngs2SetFilter(Ngs2Voice& voice, const Ngs2SamplerVoiceFilterParam& param) {
-    if (param.index >= voice.rack->maxFilters) APS5_INVALID_ARG_EX;
+    if (param.header.size < sizeof(Ngs2SamplerVoiceFilterParam)) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_VOICE_CONTROL_SIZE};
+    if (param.index >= voice.rack->maxFilters) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_PARAM_ID};
+    if (param.type >= 12) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_FILTER_TYPE};
+    if (param.location >= std::uint64_t{2} + voice.ports.size()) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_MODULE_LOCATION};
     if (voice.filters.size() <= param.index) voice.filters.resize(param.index + 1);
     auto& filter = voice.filters[param.index];
     if (param.type == 0) {
         filter = {};
         return;
     }
-    if (param.location != 1 || param.type != 1) {
-        throw std::runtime_error("NGS2: sampler filter location " + std::to_string(param.location) + " type " + std::to_string(param.type) + " is not implemented");
-    }
-    if (!std::isfinite(param.frequency) || param.frequency < 0.0f || !std::isfinite(param.q) || param.q <= 0.0f || !std::isfinite(param.level) || param.level < 0.0f) {
-        APS5_INVALID_ARG_EX;
-    }
     filter.parameter = param;
     filter.pending = voice.rack->system == nullptr;
     filter.enabled = true;
+    filter.location = param.location;
     filter.bypassMask = param.channel_mask;
     filter.history.resize(voice.channels);
     if (filter.pending) return;
-    const double rate = voice.rack->system->option.sample_rate;
-    if (param.frequency == 0.0f || param.frequency >= rate * 0.5) {
-        filter.b0 = param.frequency == 0.0f ? 0.0 : param.level;
-        filter.b1 = filter.b2 = filter.a1 = filter.a2 = 0.0;
-        return;
-    }
-    const double omega = 2.0 * std::numbers::pi * param.frequency / rate;
-    const double cosine = std::cos(omega);
-    const double alpha = std::sin(omega) / (2.0 * param.q);
-    const double inverseA0 = 1.0 / (1.0 + alpha);
-    filter.b0 = (1.0 - cosine) * 0.5 * inverseA0 * param.level;
-    filter.b1 = 2.0 * filter.b0;
-    filter.b2 = filter.b0;
-    filter.a1 = -2.0 * cosine * inverseA0;
-    filter.a2 = (1.0 - alpha) * inverseA0;
+    Ngs2ConfigureFilter(filter, param, static_cast<float>(voice.rack->system->option.sample_rate));
 }
 
 void Ngs2PublishSamplerState(Ngs2Voice& voice) {
@@ -951,7 +939,7 @@ static void ApplySamplerParam(Ngs2Voice& voice, const Ngs2VoiceParamHeader& para
             voice.pitch = std::clamp(ratio, 0.0f, 4.0f);
             break;
         }
-        case SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER: Ngs2SetFilter(voice, ParamAs<Ngs2SamplerVoiceFilterParam>(param)); break;
+        case SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER: Ngs2SetFilter(voice, reinterpret_cast<const Ngs2SamplerVoiceFilterParam&>(param)); break;
         case SCE_NGS2_SAMPLER_VOICE_PARAM_PEAK_METER: SetPeakMeter(voice, ParamAs<Ngs2VoicePeakMeterParam>(param).detect_type); break;
         default: throw std::runtime_error("NGS2: sampler voice param " + Ngs2Hex(param.id) + " is not implemented");
     }
@@ -973,6 +961,7 @@ static void ApplyParam(Ngs2Voice& voice, const Ngs2VoiceParamHeader& param) {
         Ngs2ApplyCustomParam(voice, param);
         return;
     }
+    if (param.id == SCE_NGS2_SAMPLER_VOICE_PARAM_FILTER && voice.rack->rackId == SCE_NGS2_RACK_ID_CUSTOM_SAMPLER) throw Ngs2ReturnCode{SCE_NGS2_ERROR_INVALID_PARAM_ID};
     if (rackId != voice.rack->rackId) throw std::invalid_argument("NGS2: voice param " + Ngs2Hex(param.id) + " belongs to another rack");
     switch (rackId) {
         case SCE_NGS2_RACK_ID_SAMPLER:
