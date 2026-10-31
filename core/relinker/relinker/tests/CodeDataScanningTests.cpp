@@ -98,16 +98,29 @@ void CheckNoUnwindIndirectJumpSyscall(Domain::FileByteOffset origin) {
 
 void CheckIndirectOnlyDynamicSyscall(Domain::FileByteOffset origin) {
     const Bytes code = {
-        0xC3,
-        0x0F, 0x78,
-        0x90, 0x90,
+        0xEB, 0x03,
+        0x0F, 0x78, 0x00,
         0x48, 0x8D, 0x05, 0x02, 0x00, 0x00, 0x00,
         0xFF, 0xE0,
         0x8B, 0x07,
         0x0F, 0x05,
         0xC3,
     };
-    CheckForbiddenInstruction(code, origin, 16, {}, {{0, 1}});
+    CheckForbiddenInstruction(code, origin, 16, {}, {{0, 2}});
+}
+
+void CheckGapBranchToSyscall(Domain::FileByteOffset origin) {
+    const Bytes code = {
+        0xC3,
+        0xEB, 0x03,
+        0x00, 0x00, 0x00,
+        0x8B, 0x07,
+        0x0F, 0x05,
+        0xC3,
+    };
+    TestProgress progress;
+    const auto scanner = Relinker::MakeSyscallScanner(progress);
+    Require(scanner->ScanCodeSectionForSyscalls(code, origin, code.size(), {}, {{0, 1}}).empty(), "Data gap branch falsely created a routine and rejected 0F 05");
 }
 
 void CheckDirectCallAfterIndirectJump(Domain::FileByteOffset origin) {
@@ -175,6 +188,7 @@ int main() {
             CheckDirectCallAfterIndirectJump(origin);
             CheckConditionalBranchAcrossGap(origin);
             CheckUnwindGapAndBoundedCallee(origin);
+            CheckGapBranchToSyscall(origin);
         }
         std::cout << "Embedded-code-data known-gap and reachable-code controls passed\n";
     } catch (const std::exception& error) {

@@ -375,27 +375,7 @@ static std::vector<CodeRange> DiscoverRoutines(const std::vector<std::uint8_t>& 
             pos += info.Length;
         }
     }
-    for (std::size_t pos = 0; pos < limit;) {
-        if (ContainsOffset(unwind, pos)) {
-            const auto after = std::upper_bound(unwind.begin(), unwind.end(), pos, [](const std::size_t value, const CodeRange& range) { return value < range.Begin; });
-            if (after != unwind.begin())
-                pos = static_cast<std::size_t>(std::prev(after)->End);
-            continue;
-        }
-        Codegen::DecodedInstructionInfo info;
-        try {
-            info = decoder.DecodeInstruction(code.data() + pos, limit - pos);
-        } catch (const Codegen::CodegenException&) {
-            ++pos;
-            continue;
-        }
-        if (info.Length == 0 || info.Length > limit - pos) {
-            ++pos;
-            continue;
-        }
-        QueueInstructionTargets(pending, visited, unwind, info, code, pos, limit);
-        pos += info.Length;
-    }
+
     std::set<std::size_t> explored;
     while (!pending.empty()) {
         const auto root = pending.back();
