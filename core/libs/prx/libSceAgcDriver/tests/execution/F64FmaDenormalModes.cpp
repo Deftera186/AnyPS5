@@ -246,16 +246,19 @@ void Run(AgcDriver::VulkanDevice& device, const Case& item, const Mode& mode) {
     device.WaitIdle();
 }
 
-std::uint32_t Check(const Case& item, const Mode& mode, bool keepsDenormals) {
+bool DeviceFlushed(const Case& item, const Mode& mode, std::uint32_t tid, std::uint64_t actual) {
     const std::array<std::uint32_t, 3> deviceFlushes{mode.field & 2u, mode.field & 1u, 0u};
+    return std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return item.expected[flushed][tid] == actual; });
+}
+
+std::uint32_t Check(const Case& item, const Mode& mode, bool keepsDenormals) {
     std::uint32_t skipped = 0;
     for (std::uint32_t tid = 0; tid < Threads; ++tid) {
         const std::uint64_t actual = Output[tid * Results] | (static_cast<std::uint64_t>(Output[tid * Results + 1u]) << 32u);
         const std::uint64_t expected = item.expected[mode.field][tid];
         if (actual == expected) continue;
         const std::string message = std::string(item.name) + " " + mode.name + " of " + Hex(item.rows[tid][0]) + ", " + Hex(item.rows[tid][1]) + " and " + Hex(item.rows[tid][2]) + " is " + Hex(actual) + ", expected " + Hex(expected);
-        const bool deviceDependent = std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return item.expected[flushed][tid] != expected; });
-        Require(deviceDependent && !keepsDenormals, message);
+        Require(DeviceFlushed(item, mode, tid, actual) && !keepsDenormals, message);
         std::printf("skipped %s, the device flushes f64 denormals without DenormPreserve support\n", message.c_str());
         ++skipped;
     }
@@ -288,6 +291,8 @@ int main() {
             {"f64 denormal mode 3, IEEE mode on", ShaderRecompiler::ShaderFloatMode{0xf0u, true, true, false}, 3u},
             {"f64 denormal mode 3, IEEE mode off", ShaderRecompiler::ShaderFloatMode{0xf0u, true, false, false}, 3u},
         };
+        Require(DeviceFlushed(cases[0], modes[7], 7u, 0x0000000000000000ull), "a flushed denormal result is not accepted as a device flush");
+        Require(!DeviceFlushed(cases[0], modes[7], 7u, 0x12345678deadbeefull), "an unrelated result is accepted as a device flush");
         bool keepsDenormals = device->Target().float64DenormPreserve;
         std::uint32_t skipped = 0;
         for (const Case& item : cases) {
@@ -299,7 +304,11 @@ int main() {
                 skipped += modeSkipped;
             }
         }
-        std::printf("f64 fma and div_fmas denormal mode tests passed, %u device-dependent results skipped\n", skipped);
+        if (skipped != 0u) {
+            std::printf("skipped, the device flushes f64 denormals without DenormPreserve support, %u results not checked\n", skipped);
+            return VulkanTestSkipped;
+        }
+        std::puts("f64 fma and div_fmas denormal mode tests passed");
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
