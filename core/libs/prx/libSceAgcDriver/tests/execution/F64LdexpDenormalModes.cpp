@@ -269,9 +269,13 @@ void Run(AgcDriver::VulkanDevice& device, const Mode& mode) {
     device.WaitIdle();
 }
 
+bool DeviceFlushed(const Mode& mode, std::uint32_t tid, std::uint32_t form, std::uint64_t actual) {
+    const std::array<std::uint32_t, 3> deviceFlushes{mode.field & 2u, mode.field & 1u, 0u};
+    return std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return Expected[mode.ieee][flushed][tid][form] == actual; });
+}
+
 std::uint32_t Check(const Mode& mode, bool keepsDenormals) {
     constexpr const char* Forms[2] = {"v_ldexp_f64 by v6", "v_ldexp_f64 by -1"};
-    const std::array<std::uint32_t, 3> deviceFlushes{mode.field & 2u, mode.field & 1u, 0u};
     std::uint32_t skipped = 0;
     for (std::uint32_t tid = 0; tid < Threads; ++tid) {
         for (std::uint32_t form = 0; form < 2u; ++form) {
@@ -279,8 +283,7 @@ std::uint32_t Check(const Mode& mode, bool keepsDenormals) {
             const std::uint64_t expected = Expected[mode.ieee][mode.field][tid][form];
             if (actual == expected) continue;
             const std::string message = std::string(Forms[form]) + " " + mode.name + " of " + Hex(Source[tid]) + " is " + Hex(actual) + ", expected " + Hex(expected);
-            const bool deviceDependent = std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return Expected[mode.ieee][flushed][tid][form] != expected; });
-            Require(deviceDependent && !keepsDenormals, message);
+            Require(DeviceFlushed(mode, tid, form, actual) && !keepsDenormals, message);
             std::printf("skipped %s, the device flushes f64 denormals without DenormPreserve support\n", message.c_str());
             ++skipped;
         }
@@ -309,6 +312,8 @@ int main() {
             {"f64 denormal mode 3, IEEE mode on", ShaderRecompiler::ShaderFloatMode{0xf0u, true, true, false}, 1u, 3u},
             {"f64 denormal mode 3, IEEE mode off", ShaderRecompiler::ShaderFloatMode{0xf0u, true, false, false}, 0u, 3u},
         };
+        Require(DeviceFlushed(modes[7], 2u, 0u, 0x0000000000000000ull), "a flushed minimum denormal is not accepted as a device flush");
+        Require(!DeviceFlushed(modes[7], 2u, 0u, 0x12345678deadbeefull), "an unrelated result is accepted as a device flush");
         bool keepsDenormals = device->Target().float64DenormPreserve;
         std::uint32_t skipped = 0;
         for (const Mode& mode : modes) {
