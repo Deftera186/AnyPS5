@@ -176,7 +176,7 @@ std::uint32_t Check(const Mode& mode, bool keepsDenormals) {
             Require(actualVcc == expectedVcc, std::string("v_div_scale_f64 VCC ") + mode.name + " of " + Forms[form] + " with " + Hex(Pairs[tid][0]) + " and " + Hex(Pairs[tid][1]) + " is " + std::to_string(actualVcc) + ", expected " + std::to_string(expectedVcc));
             if (actual == expected) continue;
             const std::string message = std::string("v_div_scale_f64 ") + mode.name + " of " + Forms[form] + " with " + Hex(Pairs[tid][0]) + " and " + Hex(Pairs[tid][1]) + " is " + Hex(actual) + ", expected " + Hex(expected);
-            const bool deviceDependent = std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return Expected[flushed][tid][form] != expected; });
+            const bool deviceDependent = std::any_of(deviceFlushes.begin(), deviceFlushes.end(), [&](std::uint32_t flushed) { return Expected[flushed][tid][form] == actual && Expected[flushed][tid][form] != expected; });
             Require(deviceDependent && !keepsDenormals, message);
             std::printf("skipped %s, the device flushes f64 denormals without DenormPreserve support\n", message.c_str());
             ++skipped;
@@ -214,7 +214,11 @@ int main() {
             keepsDenormals = keepsDenormals || (!mode.value.has_value() && modeSkipped == 0u);
             skipped += modeSkipped;
         }
-        std::printf("v_div_scale_f64 denormal mode tests passed, %u device-dependent results skipped\n", skipped);
+        if (skipped != 0u) {
+            std::printf("skipped, %u device-dependent results were not checked\n", skipped);
+            return VulkanTestSkipped;
+        }
+        std::puts("v_div_scale_f64 denormal mode tests passed");
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
